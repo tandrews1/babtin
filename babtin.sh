@@ -16,16 +16,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 WORKING_DIR=/tmp/babtin.$$
 WORKING_TOTAL_PASS_FILE=/tmp/babtin.$$/status/total_pass
 WORKING_TOTAL_FAIL_FILE=/tmp/babtin.$$/status/total_fail
-WORKING_RACE_DIE_FILE=/tmp/babtin.$$/control/race_die
+WORKING_DICE_1_FILE=/tmp/babtin.$$/control/race_die
 WORKING_SIGINT_FILE=/tmp/babtin.$$/control/sigint
-
-gopath-root () {
-   cd $GOPATH
-}
-
-lab-src-dir () {
-   gopath-root && cd src/raft
-}
 
 get-full-test-name () {
    local name=$1
@@ -78,14 +70,14 @@ do-title () {
    echo "`io-color-stop green`"
    echo "WORKING_DIR =$WORKING_DIR"
    echo "Ctrl-C for overall testing status... double Ctrl-C to exit."
-   echo "Running with race check die rolls $RACE_DICE/6"
+   echo "Running with race check die rolls $BABTIN_FIRST_DICE/6"
    echo "Testing..."
 }
 
 dump-env () {
    echo "BABTIN_TEST_PASS=$BABTIN_TEST_PASS"
    echo "BABTIN_TEST_FAIL=$BABTIN_TEST_FAIL"
-   echo "RACE_DICE=$RACE_DICE"
+   echo "BABTIN_FIRST_DICE=$BABTIN_FIRST_DICE"
    echo "SIGINT_SKIP=$SIGINT_SKIP"
 }
 
@@ -93,19 +85,19 @@ dump-env () {
 do-env-export () {
    local passes_file="$WORKING_TOTAL_PASS_FILE"
    local fails_file="$WORKING_TOTAL_FAIL_FILE"
-   local race_die_file="$WORKING_RACE_DIE_FILE"
+   local die_1_file="$WORKING_DICE_1_FILE"
    local sigint_file="$WORKING_SIGINT_FILE"
    mbs-assert-file "$FUNCNAME" "$LINENO" "$passes_file" "pass file not found"
    mbs-assert-file "$FUNCNAME" "$LINENO" "$fails_file" "fail file not found"
-   mbs-assert-file "$FUNCNAME" "$LINENO" "$race_die_file" "fail file not found"
+   mbs-assert-file "$FUNCNAME" "$LINENO" "$die_1_file" "fail file not found"
    mbs-assert-file "$FUNCNAME" "$LINENO" "$sigint_file" "sigint file not found"
    mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$BABTIN_TEST_PASS" "passes empty"
    mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$BABTIN_TEST_FAIL" "fails empty"
-   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$RACE_DICE" "die empty"
+   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$BABTIN_FIRST_DICE" "die empty"
    mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$SIGINT_SKIP" "sigint empty"
    echo $BABTIN_TEST_PASS > $passes_file   && \
       echo $BABTIN_TEST_FAIL > $fails_file && \
-      echo $RACE_DICE > $race_die_file     && \
+      echo $BABTIN_FIRST_DICE > $die_1_file     && \
       echo $SIGINT_SKIP > $sigint_file 
    mbs-assert-zero "$FUNCNAME" "$LINENO" "$?" "save failed"
 }
@@ -114,22 +106,22 @@ do-env-export () {
 do-env-import () {
    local passes_file="$WORKING_TOTAL_PASS_FILE"
    local fails_file="$WORKING_TOTAL_FAIL_FILE"
-   local race_die_file="$WORKING_RACE_DIE_FILE"
+   local die_1_file="$WORKING_DICE_1_FILE"
    local sigint_file="$WORKING_SIGINT_FILE"
    mbs-assert-file "$FUNCNAME" "$LINENO" "$passes_file" "pass file not found"
    mbs-assert-file "$FUNCNAME" "$LINENO" "$fails_file" "fail file not found"
-   mbs-assert-file "$FUNCNAME" "$LINENO" "$race_die_file" "race die file not found"
+   mbs-assert-file "$FUNCNAME" "$LINENO" "$die_1_file" "die 1 file not found"
    mbs-assert-file "$FUNCNAME" "$LINENO" "$sigint_file" "sigint file not found"
    local passes="`cat $passes_file`"
    local fails="`cat $fails_file`"
-   local race_die="`cat $race_die_file`"
+   local race_die="`cat $die_1_file`"
    local sigint_status="`cat $sigint_file`"
    mbs-assert-integer "$FUNCNAME" "$LINENO" "$passes" "passes not int"
    mbs-assert-integer "$FUNCNAME" "$LINENO" "$fails" "fails not int"
-   mbs-assert-integer "$FUNCNAME" "$LINENO" "$race_die" "race die not int"
+   mbs-assert-integer "$FUNCNAME" "$LINENO" "$race_die" "die 1 not int"
    export BABTIN_TEST_PASS=$passes   && \
       export BABTIN_TEST_FAIL=$fails &&
-      export RACE_DICE=$race_die     &&
+      export BABTIN_FIRST_DICE=$race_die     &&
       export SIGINT_SKIP=$sigint_status
    mbs-assert-zero "$FUNCNAME" "$LINENO" "$?" "import failed"
 }
@@ -156,7 +148,6 @@ do-summary () {
    echo -en "$BABTIN_TEST_FAIL fail(s)"
    if [ $BABTIN_TEST_FAIL -gt 0 ]; then
       echo -e "`io-color-stop red`"
-      tree
    else 
       echo ""
    fi
@@ -168,14 +159,14 @@ init-working-dir () {
    echo 0 > $WORKING_TOTAL_PASS_FILE
    echo 0 > $WORKING_TOTAL_FAIL_FILE
    mkdir -p /tmp/babtin.$$/control
-   echo $RACE_DICE > $WORKING_RACE_DIE_FILE
+   echo $BABTIN_FIRST_DICE > $WORKING_DICE_1_FILE
    echo 0 > $WORKING_SIGINT_FILE
 }
 
 #
 # Searches common strings like ASSERT, error, fail, exception,
-# and tries to bash out a single_underscored_summary.
-# (potentially for a file or directory name).
+# and tries to smash out a single_underscored_summary as a rough summary of
+# the error, potentially for a file or directory name.
 #
 # TODO remove debug statements
 #
@@ -246,19 +237,21 @@ test-pass () {
    rm $logfile
 }
 
-lab-test-cmd () {
+tester-test-cmd () {
    local name="$1"
    local cmd="$2"
    mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" "arg1 empty"
    mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$cmd" "arg2 empty"
    local logfile="`get-test-log $name`"
-   printf "(%-14s) `get-full-test-name $name`: " "`time-seconds-to-human $SECONDS`"
+   printf "(%-14s) `get-full-test-name $name`: " \
+      "`time-seconds-to-human $SECONDS`"
    $cmd &> $logfile
    cmd_exit=$?
    # If we handled a sigint and returned, then just abort the current test...
    if [ $cmd_exit != 0 ]; then
       do-env-import
-      mbs-assert-integer "$FUNCNAME" "$LINENO" "$SIGINT_SKIP" "SIGINT skip not synced right"
+      mbs-assert-integer "$FUNCNAME" "$LINENO" "$SIGINT_SKIP" \
+         "SIGINT skip not synced right"
       if [ $SIGINT_SKIP == 1 ]; then
          trap handle-sigint SIGINT
          export SIGINT_SKIP=0
@@ -273,34 +266,7 @@ lab-test-cmd () {
 }
 
 test-squier () {
-   lab-test-cmd "squier-$RANDOM" "$SCRIPT_DIR/squier.sh"
-}
-
-lab-test-std() {
-   local name="$1"
-   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" "arg1 empty"
-   lab-src-dir
-   lab-test-cmd "$name" "go test -run $name"
-}
-
-lab-test-races() {
-   local name="$1"
-   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" "arg1 empty"
-   lab-src-dir
-   lab-test-cmd "$name-race_$RACE_DICE" "go test -race -run $name"
-}
-
-lab-test-with-dice-races () {
-   local name="$1"
-   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" "arg1 empty"
-   let "die = $RANDOM % 6 + 1"
-   if [ $die -le $RACE_DICE ]; then
-      lab-test-races $name
-      return $?
-   else 
-      lab-test-std $name
-      return $?
-   fi
+   tester-test-cmd "squier-$RANDOM" "$SCRIPT_DIR/squier.sh"
 }
 
 main () {
@@ -310,8 +276,8 @@ main () {
  
    # Create bug tracking structure
    mkdir -p $SCRIPT_DIR/fails
-   mkdir -p $SCRIPT_DIR/fails/triaged
-   mkdir -p $SCRIPT_DIR/fails/resolved
+   mkdir -p $SCRIPT_DIR/triaged
+   mkdir -p $SCRIPT_DIR/resolved
 
    # Triage mode...
    if [ "$1" == "--triage" ]; then
@@ -336,22 +302,9 @@ main () {
       return 0
    fi
 
-   #
-   # Continuous testing mode begin.
-   #
-   if [ -z $GOPATH ]; then
-      io-error "GOPATH not set."
-      return 1
-   fi
-   if [ -z $RACE_DICE ]; then 
-      io-error "RACE_DICE not set."
-      return 1
-   fi
-
    # Ctrl-C will show status, quick double Ctrl-C will
    # kill the tester.
    trap handle-sigint SIGINT
-
 
    # Init our tester's working dir.
    init-working-dir
@@ -361,24 +314,94 @@ main () {
 
    # Run tester until killed with double SIGINT
    export SECONDS=0
+   tester-begin 
    while :
    do
       # Practice on Squier tester tester.
       if [ "$1" == "--selftest" ]; then
          test-squier
       else
-         test-all $*
+         tester-next-test $*
       fi
    done
 }
 
-# Test code below ==============================================================
+# Begin Sandbox (what you want to test)  =====================================
 
-test-all () {
-   lab-test-with-dice-races "2A"
+golab-src-dir () {
+   cd $GOPATH && cd src/raft
 }
 
-# End test code ================================================================
+golab-test-std() {
+   local name="$1"
+   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" "arg1 empty"
+   golab-src-dir
+   if [ ! -z $THA_GO_DEBUG ]; then
+      tester-test-cmd "debug-$THA_GO_DEBUG-$name" "go test -run $name"
+      return $?
+   else
+      tester-test-cmd "release-$name" "go test -run $name"
+      return $?
+   fi
+}
+
+golab-test-races() {
+   local name="$1"
+   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" "arg1 empty"
+   golab-src-dir
+   if [ ! -z $THA_GO_DEBUG ]; then
+      tester-test-cmd "debug-$THA_GO_DEBUG-$name-race_$BABTIN_FIRST_DICE" \
+         "go test -run $name"
+      return $?
+   else
+      tester-test-cmd "release-$name-race_$BABTIN_FIRST_DICE" \
+         "go test -run $name"
+      return $?
+   fi
+}
+
+golab-test-with-dice-races () {
+   local name="$1"
+   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" "arg1 empty"
+   let "die = $RANDOM % 6 + 1"
+   if [ $die -le $BABTIN_FIRST_DICE ]; then
+      golab-test-races $name
+      return $?
+   else 
+      golab-test-std $name
+      return $?
+   fi
+}
+
+# 
+# tester-begin --
+#
+# Babtin will execute the tester-begin function once at the beginning before
+# looping on tester-next-test.
+#
+tester-begin () {
+   if [ -z $GOPATH ]; then
+      io-error "GOPATH not set."
+      exit 1
+   fi
+   if [ -z $BABTIN_FIRST_DICE ]; then 
+      io-error "BABTIN_FIRST_DICE not set."
+      exit 1
+   fi
+}
+
+#
+# tester-next-test --
+#
+# Babtin will execute the tester-next-test function repeatedly,
+# attempting to auto-triaging the output of this function,
+# iff this function returns non-zero.
+#
+tester-next-test () {
+   golab-test-with-dice-races "2A"
+}
+
+# End Sandbox ===========================================================
 
 # Run!
 main $*
