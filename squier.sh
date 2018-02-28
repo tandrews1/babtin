@@ -22,7 +22,7 @@ main () {
             echo "ERROR: fail reason $((RANDOM % 10))"
          elif [ $failtype = 6 ]; then
             echo "Error: error reason $((RANDOM % 10))"
-         elif [ $failtype = 7 ]; then
+         else
             echo "error: error reason $((RANDOM % 10))"
          fi
          exit 1
@@ -31,5 +31,4 @@ main () {
          exit 0
       fi
 }
-
 main
