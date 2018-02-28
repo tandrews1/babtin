@@ -1,40 +1,27 @@
 #!/usr/bin/env bash
 
 #
-# "Because a Bash Tester Is Needed" - Babtin
+# "Because a Bash Tester Is Needed"
 #
 # Taylor Hartley Andrews 
-# MIT SDM
+# MIT SDM / Cybersecurity at Sloan 
 # 6.824 Distributed Systems
 #
 
-# Globals
 VERSION=1.0
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
 WORKING_DIR=/tmp/babtin.$$
 WORKING_TOTAL_PASS_FILE=/tmp/babtin.$$/status/total_pass
 WORKING_TOTAL_FAIL_FILE=/tmp/babtin.$$/status/total_fail
 WORKING_DICE_1_FILE=/tmp/babtin.$$/control/race_die
 WORKING_SIGINT_FILE=/tmp/babtin.$$/control/sigint
 
-get-full-test-name () {
-   local name=$1
-   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" "no name given"
-   local full_test_name=""
-   if [ ! -z $THA_GO_DEBUG ]; then
-      full_test_name="debug-$THA_GO_DEBUG-$name"
-   else
-      full_test_name="release-$name"
-   fi
-   echo $full_test_name
-}
-
 get-test-log () {
    local name=$1
    mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" "no name given"
-   local file_name="`get-full-test-name $name`"
+   # For now, just use the test name with a random number appended
+   local file_name="$name"
    mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$file_name" "file name empty"
    echo /tmp/$file_name.$RANDOM
 }
@@ -243,8 +230,7 @@ tester-test-cmd () {
    mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" "arg1 empty"
    mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$cmd" "arg2 empty"
    local logfile="`get-test-log $name`"
-   printf "(%-14s) `get-full-test-name $name`: " \
-      "`time-seconds-to-human $SECONDS`"
+   printf "(%-14s) %16s: " "`time-seconds-to-human $SECONDS`" "$name"
    $cmd &> $logfile
    cmd_exit=$?
    # If we handled a sigint and returned, then just abort the current test...
