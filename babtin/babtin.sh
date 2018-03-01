@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.3.0
+VERSION=0.4.0
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 WORKING_DIR=/tmp/babtin.$$
@@ -115,11 +115,24 @@ do-env-import () {
    mbs-assert-zero "$FUNCNAME" "$LINENO" "$?" "import failed"
 }
 
+do-exit () {
+   echo "Exiting..."
+   echo  "WORKING_DIR=$WORKING_DIR"
+   # Any more cleanup?
+   exit 0
+}
+
 handle-sigint () {
    do-env-import   
    do-summary
-   trap - SIGINT
-   sleep 4
+   trap handle-sigint SIGINT
+   local cmd=""
+   echo ""
+   echo -n "e to exit, enter to continue> "
+   read cmd
+   if [ "$cmd" == "e" -o "$cmd" == "E" -o "$cmd" == "exit" ]; then
+      do-exit 
+   fi
    echo "Resuming testing..."
    export SIGINT_SKIP=1
    do-env-export
@@ -128,7 +141,9 @@ handle-sigint () {
 do-summary () {
    local time="`time-seconds-to-human $SECONDS`"
    do-env-import
-   echo ""
+   if [ "`which tree`" != "" ]; then
+      tree -ChD $SCRIPT_DIR/tracker/fails
+   fi
    echo -en "`io-color-start green`$BABTIN_TEST_PASS pass streak ($time)`io-color-stop green` | "
    if [ $BABTIN_TEST_FAIL -gt 0 ]; then
       echo -en "`io-color-start red`"
@@ -138,10 +153,6 @@ do-summary () {
       echo -e "`io-color-stop red`"
    else 
       echo ""
-   fi
-   echo ""
-   if [ "`which tree`" != "" ]; then
-      tree -ChD $SCRIPT_DIR/tracker/fails
    fi
    tester-summary
 }
