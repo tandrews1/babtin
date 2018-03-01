@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.1.2
+VERSION=0.3.0
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 WORKING_DIR=/tmp/babtin.$$
@@ -129,7 +129,6 @@ do-summary () {
    local time="`time-seconds-to-human $SECONDS`"
    do-env-import
    echo ""
-   echo ""
    echo -en "`io-color-start green`$BABTIN_TEST_PASS pass streak ($time)`io-color-stop green` | "
    if [ $BABTIN_TEST_FAIL -gt 0 ]; then
       echo -en "`io-color-start red`"
@@ -141,6 +140,10 @@ do-summary () {
       echo ""
    fi
    echo ""
+   if [ "`which tree`" != "" ]; then
+      tree -ChD $SCRIPT_DIR/tracker/fails
+   fi
+   tester-summary
 }
 
 init-working-dir () {
@@ -206,7 +209,9 @@ test-fail () {
    else
       echo "Could not auto-triage failure :("
    fi
-   tree $SCRIPT_DIR/tracker/fails
+   if [ "`which tree`" != "" ]; then
+      tree -ChD $SCRIPT_DIR/tracker/fails
+   fi
    do-env-import
    export BABTIN_TEST_FAIL=$((BABTIN_TEST_FAIL+1))
    # Start the passing streak over...
@@ -287,6 +292,11 @@ main () {
       done
       popd > /dev/null
       return 0
+   fi
+
+   # Tree is kind of required.
+   if [ "`which tree`" == "" ]; then
+      echo "NOTE: Please install tree for a better experience!"
    fi
 
    # Ctrl-C will show status, quick double Ctrl-C will

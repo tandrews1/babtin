@@ -56,6 +56,16 @@ golab-test-with-dice-races () {
 # Babtin test stubs (these are required and hooked into by test framework)
 # =============================================================================
 
+#
+# tester-summary -- 
+#
+# Called when SIGINT (ctrl-c) is received.
+#
+tester-summary () {
+   echo "GOPATH=$GOPATH"
+   echo "RACE_DICE=$BABTIN_FIRST_DICE"
+}
+
 # 
 # tester-begin --
 #
