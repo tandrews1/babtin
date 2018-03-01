@@ -1,27 +1,48 @@
 #!/usr/bin/env bash
 
 #
-# "Because A Bash Tester Is Needed"
+# "Because a Bash Tester Is Needed" - Babtin
 #
 # Taylor Hartley Andrews 
-# MIT SDM / Cybersecurity at Sloan 
+# MIT SDM
 # 6.824 Distributed Systems
 #
 
-VERSION=0.1.0
+# Globals
+VERSION=1.0
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 WORKING_DIR=/tmp/babtin.$$
 WORKING_TOTAL_PASS_FILE=/tmp/babtin.$$/status/total_pass
 WORKING_TOTAL_FAIL_FILE=/tmp/babtin.$$/status/total_fail
-WORKING_DICE_1_FILE=/tmp/babtin.$$/control/first_dice
+WORKING_RACE_DIE_FILE=/tmp/babtin.$$/control/race_die
 WORKING_SIGINT_FILE=/tmp/babtin.$$/control/sigint
+
+gopath-root () {
+   cd $GOPATH
+}
+
+lab-src-dir () {
+   gopath-root && cd src/raft
+}
+
+get-full-test-name () {
+   local name=$1
+   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" "no name given"
+   local full_test_name=""
+   if [ ! -z $THA_GO_DEBUG ]; then
+      full_test_name="debug-$THA_GO_DEBUG-$name"
+   else
+      full_test_name="release-$name"
+   fi
+   echo $full_test_name
+}
 
 get-test-log () {
    local name=$1
    mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" "no name given"
-   # For now, just use the test name with a random number appended
-   local file_name="$name"
+   local file_name="`get-full-test-name $name`"
    mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$file_name" "file name empty"
    echo /tmp/$file_name.$RANDOM
 }
@@ -57,14 +78,14 @@ do-title () {
    echo "`io-color-stop green`"
    echo "WORKING_DIR =$WORKING_DIR"
    echo "Ctrl-C for overall testing status... double Ctrl-C to exit."
-   echo "Running with race check die rolls $BABTIN_FIRST_DICE/6"
+   echo "Running with race check die rolls $RACE_DICE/6"
    echo "Testing..."
 }
 
 dump-env () {
    echo "BABTIN_TEST_PASS=$BABTIN_TEST_PASS"
    echo "BABTIN_TEST_FAIL=$BABTIN_TEST_FAIL"
-   echo "BABTIN_FIRST_DICE=$BABTIN_FIRST_DICE"
+   echo "RACE_DICE=$RACE_DICE"
    echo "SIGINT_SKIP=$SIGINT_SKIP"
 }
 
@@ -72,19 +93,19 @@ dump-env () {
 do-env-export () {
    local passes_file="$WORKING_TOTAL_PASS_FILE"
    local fails_file="$WORKING_TOTAL_FAIL_FILE"
-   local die_1_file="$WORKING_DICE_1_FILE"
+   local race_die_file="$WORKING_RACE_DIE_FILE"
    local sigint_file="$WORKING_SIGINT_FILE"
    mbs-assert-file "$FUNCNAME" "$LINENO" "$passes_file" "pass file not found"
    mbs-assert-file "$FUNCNAME" "$LINENO" "$fails_file" "fail file not found"
-   mbs-assert-file "$FUNCNAME" "$LINENO" "$die_1_file" "fail file not found"
+   mbs-assert-file "$FUNCNAME" "$LINENO" "$race_die_file" "fail file not found"
    mbs-assert-file "$FUNCNAME" "$LINENO" "$sigint_file" "sigint file not found"
    mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$BABTIN_TEST_PASS" "passes empty"
    mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$BABTIN_TEST_FAIL" "fails empty"
-   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$BABTIN_FIRST_DICE" "die empty"
+   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$RACE_DICE" "die empty"
    mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$SIGINT_SKIP" "sigint empty"
    echo $BABTIN_TEST_PASS > $passes_file   && \
       echo $BABTIN_TEST_FAIL > $fails_file && \
-      echo $BABTIN_FIRST_DICE > $die_1_file     && \
+      echo $RACE_DICE > $race_die_file     && \
       echo $SIGINT_SKIP > $sigint_file 
    mbs-assert-zero "$FUNCNAME" "$LINENO" "$?" "save failed"
 }
@@ -93,22 +114,22 @@ do-env-export () {
 do-env-import () {
    local passes_file="$WORKING_TOTAL_PASS_FILE"
    local fails_file="$WORKING_TOTAL_FAIL_FILE"
-   local die_1_file="$WORKING_DICE_1_FILE"
+   local race_die_file="$WORKING_RACE_DIE_FILE"
    local sigint_file="$WORKING_SIGINT_FILE"
    mbs-assert-file "$FUNCNAME" "$LINENO" "$passes_file" "pass file not found"
    mbs-assert-file "$FUNCNAME" "$LINENO" "$fails_file" "fail file not found"
-   mbs-assert-file "$FUNCNAME" "$LINENO" "$die_1_file" "die 1 file not found"
+   mbs-assert-file "$FUNCNAME" "$LINENO" "$race_die_file" "race die file not found"
    mbs-assert-file "$FUNCNAME" "$LINENO" "$sigint_file" "sigint file not found"
    local passes="`cat $passes_file`"
    local fails="`cat $fails_file`"
-   local first_dice="`cat $die_1_file`"
+   local race_die="`cat $race_die_file`"
    local sigint_status="`cat $sigint_file`"
    mbs-assert-integer "$FUNCNAME" "$LINENO" "$passes" "passes not int"
    mbs-assert-integer "$FUNCNAME" "$LINENO" "$fails" "fails not int"
-   mbs-assert-integer "$FUNCNAME" "$LINENO" "$first_dice" "die 1 not int"
+   mbs-assert-integer "$FUNCNAME" "$LINENO" "$race_die" "race die not int"
    export BABTIN_TEST_PASS=$passes   && \
-      export BABTIN_TEST_FAIL=$fails && \
-      export BABTIN_FIRST_DICE=$first_dice && \
+      export BABTIN_TEST_FAIL=$fails &&
+      export RACE_DICE=$race_die     &&
       export SIGINT_SKIP=$sigint_status
    mbs-assert-zero "$FUNCNAME" "$LINENO" "$?" "import failed"
 }
@@ -135,6 +156,7 @@ do-summary () {
    echo -en "$BABTIN_TEST_FAIL fail(s)"
    if [ $BABTIN_TEST_FAIL -gt 0 ]; then
       echo -e "`io-color-stop red`"
+      tree
    else 
       echo ""
    fi
@@ -146,14 +168,14 @@ init-working-dir () {
    echo 0 > $WORKING_TOTAL_PASS_FILE
    echo 0 > $WORKING_TOTAL_FAIL_FILE
    mkdir -p /tmp/babtin.$$/control
-   echo $BABTIN_FIRST_DICE > $WORKING_DICE_1_FILE
+   echo $RACE_DICE > $WORKING_RACE_DIE_FILE
    echo 0 > $WORKING_SIGINT_FILE
 }
 
 #
 # Searches common strings like ASSERT, error, fail, exception,
-# and tries to smash out a single_underscored_summary as a rough summary of
-# the error, potentially for a file or directory name.
+# and tries to bash out a single_underscored_summary.
+# (potentially for a file or directory name).
 #
 # TODO remove debug statements
 #
@@ -224,20 +246,19 @@ test-pass () {
    rm $logfile
 }
 
-tester-test-cmd () {
+lab-test-cmd () {
    local name="$1"
    local cmd="$2"
    mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" "arg1 empty"
    mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$cmd" "arg2 empty"
    local logfile="`get-test-log $name`"
-   printf "(%-14s) %16s: " "`time-seconds-to-human $SECONDS`" "$name"
+   printf "(%-14s) `get-full-test-name $name`: " "`time-seconds-to-human $SECONDS`"
    $cmd &> $logfile
    cmd_exit=$?
    # If we handled a sigint and returned, then just abort the current test...
    if [ $cmd_exit != 0 ]; then
       do-env-import
-      mbs-assert-integer "$FUNCNAME" "$LINENO" "$SIGINT_SKIP" \
-         "SIGINT skip not synced right"
+      mbs-assert-integer "$FUNCNAME" "$LINENO" "$SIGINT_SKIP" "SIGINT skip not synced right"
       if [ $SIGINT_SKIP == 1 ]; then
          trap handle-sigint SIGINT
          export SIGINT_SKIP=0
@@ -252,7 +273,34 @@ tester-test-cmd () {
 }
 
 test-squier () {
-   tester-test-cmd "squier-$RANDOM" "$SCRIPT_DIR/squier.sh"
+   lab-test-cmd "squier-$RANDOM" "$SCRIPT_DIR/squier.sh"
+}
+
+lab-test-std() {
+   local name="$1"
+   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" "arg1 empty"
+   lab-src-dir
+   lab-test-cmd "$name" "go test -run $name"
+}
+
+lab-test-races() {
+   local name="$1"
+   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" "arg1 empty"
+   lab-src-dir
+   lab-test-cmd "$name-race_$RACE_DICE" "go test -race -run $name"
+}
+
+lab-test-with-dice-races () {
+   local name="$1"
+   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" "arg1 empty"
+   let "die = $RANDOM % 6 + 1"
+   if [ $die -le $RACE_DICE ]; then
+      lab-test-races $name
+      return $?
+   else 
+      lab-test-std $name
+      return $?
+   fi
 }
 
 main () {
@@ -288,9 +336,22 @@ main () {
       return 0
    fi
 
+   #
+   # Continuous testing mode begin.
+   #
+   if [ -z $GOPATH ]; then
+      io-error "GOPATH not set."
+      return 1
+   fi
+   if [ -z $RACE_DICE ]; then 
+      io-error "RACE_DICE not set."
+      return 1
+   fi
+
    # Ctrl-C will show status, quick double Ctrl-C will
    # kill the tester.
    trap handle-sigint SIGINT
+
 
    # Init our tester's working dir.
    init-working-dir
@@ -300,23 +361,24 @@ main () {
 
    # Run tester until killed with double SIGINT
    export SECONDS=0
-   . $SCRIPT_DIR/sandbox.sh
-   if [ "$1" != "--selftest" ]; then
-      tester-begin 
-   fi
    while :
    do
       # Practice on Squier tester tester.
       if [ "$1" == "--selftest" ]; then
          test-squier
       else
-         # If they dare to change running test code,
-         # try and helpfully start running it on next iteration...
-         . $SCRIPT_DIR/sandbox.sh
-         tester-next-test $*
+         test-all $*
       fi
    done
 }
+
+# Test code below ==============================================================
+
+test-all () {
+   lab-test-with-dice-races "2A"
+}
+
+# End test code ================================================================
 
 # Run!
 main $*

@@ -16,7 +16,6 @@ golab-src-dir () {
 
 golab-test-std() {
    local name="$1"
-   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" "arg1 empty"
    golab-src-dir
    if [ ! -z $THA_GO_DEBUG ]; then
       tester-test-cmd "debug-$THA_GO_DEBUG-$name" "go test -run $name"
@@ -29,7 +28,6 @@ golab-test-std() {
 
 golab-test-races() {
    local name="$1"
-   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" "arg1 empty"
    golab-src-dir
    if [ ! -z $THA_GO_DEBUG ]; then
       tester-test-cmd "debug-$THA_GO_DEBUG-$name-race_$BABTIN_FIRST_DICE" \
@@ -42,7 +40,8 @@ golab-test-races() {
    fi
 }
 
-golab-test-with-dice-races () { local name="$1" mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" "arg1 empty"
+golab-test-with-dice-races () {
+   local name="$1" 
    let "die = $RANDOM % 6 + 1"
    if [ $die -le $BABTIN_FIRST_DICE ]; then
       golab-test-races $name
