@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.1.0
+VERSION=0.1.1
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 WORKING_DIR=/tmp/babtin.$$
@@ -55,10 +55,10 @@ do-title () {
    echo "`io-color-start green`Sir Babtin v$VERSION "
    do-graphic
    echo "`io-color-stop green`"
-   echo "WORKING_DIR =$WORKING_DIR"
-   echo "Ctrl-C for overall testing status... double Ctrl-C to exit."
-   echo "Running with race check die rolls $BABTIN_FIRST_DICE/6"
-   echo "Testing..."
+   echo "WORKING_DIR=$WORKING_DIR"
+   echo "BABTIN_FIRST_DICE_TRIGGER=$BABTIN_FIRST_DICE/6"
+   echo "Ctrl-C for overall testing status. Double Ctrl-C to exit."
+   echo ""
 }
 
 dump-env () {
@@ -146,8 +146,9 @@ init-working-dir () {
    echo 0 > $WORKING_TOTAL_PASS_FILE
    echo 0 > $WORKING_TOTAL_FAIL_FILE
    mkdir -p /tmp/babtin.$$/control
-   echo $BABTIN_FIRST_DICE > $WORKING_DICE_1_FILE
+   echo 0 > $WORKING_DICE_1_FILE
    echo 0 > $WORKING_SIGINT_FILE
+   do-env-import
 }
 
 #
@@ -189,22 +190,19 @@ test-fail () {
    # other paths all over the place.
    local summary_safe="`basename $summary`"
    if [ "$summary" != "" ]; then
-      if [ ! -d "$SCRIPT_DIR/fails/$summary" ]; then
+      if [ ! -d "$SCRIPT_DIR/tracker/fails/$summary" ]; then
          io-hey "NEW BUG: $summary"
-         mkdir -p "$SCRIPT_DIR/fails/$summary"
+         mkdir -p "$SCRIPT_DIR/tracker/fails/$summary"
       else 
          echo "Another occurance of $summary"
       fi
-      mv $logfile "$SCRIPT_DIR/fails/$summary"
+      mv $logfile "$SCRIPT_DIR/tracker/fails/$summary"
    else
       echo "Could not auto-triage failure :("
    fi
-   tree $SCRIPT_DIR/fails
+   tree $SCRIPT_DIR/tracker/fails
    do-env-import
-   #TODO collapse at some point
-   local fails=$BABTIN_TEST_FAIL
-   fails=$((fails+1))
-   export BABTIN_TEST_FAIL=$fails
+   export BABTIN_TEST_FAIL=$((BABTIN_TEST_FAIL+1))
    # Start the passing streak over...
    export BABTIN_TEST_PASS=0
    export SECONDS=0
@@ -216,10 +214,7 @@ test-pass () {
    mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$logfile" "log file empty"
    echo "`io-color-start green`PASS `io-color-stop green`"
    do-env-import
-   #TODO collapse at some point
-   local passes=$BABTIN_TEST_PASS
-   passes=$((passes+1))
-   export BABTIN_TEST_PASS=$passes
+   export BABTIN_TEST_PASS=$((BABTIN_TEST_PASS+1))
    do-env-export
    rm $logfile
 }
@@ -252,7 +247,7 @@ tester-test-cmd () {
 }
 
 test-squier () {
-   tester-test-cmd "squier-$RANDOM" "$SCRIPT_DIR/squier.sh"
+   tester-test-cmd "squier-$RANDOM" "$SCRIPT_DIR/selftest/squier.sh"
 }
 
 main () {
@@ -261,24 +256,24 @@ main () {
    source $MBS_ROOT_DIR/core/mbs.sh > /dev/null
  
    # Create bug tracking structure
-   mkdir -p $SCRIPT_DIR/fails
-   mkdir -p $SCRIPT_DIR/triaged
-   mkdir -p $SCRIPT_DIR/resolved
+   mkdir -p $SCRIPT_DIR/tracker/fails
+   mkdir -p $SCRIPT_DIR/tracker/triaged
+   mkdir -p $SCRIPT_DIR/tracker/resolved
 
    # Triage mode...
    if [ "$1" == "--triage" ]; then
       echo "Triaging fails directory..."
       pushd "`pwd`" > /dev/null
-      cd $SCRIPT_DIR/fails
+      cd $SCRIPT_DIR/tracker/fails
       for f in ./*
       do
          if [ -f "$f" ]; then
             local summary="`bug-summary-from-log $f`"
             echo "Triaging an occurance of $summary"
             if [ "$summary" != "" ]; then
-               mkdir -p $SCRIPT_DIR/fails/$summary
-               mv $SCRIPT_DIR/fails/$f \
-                  $SCRIPT_DIR/fails/$summary/
+               mkdir -p $SCRIPT_DIR/tracker/fails/$summary
+               mv $SCRIPT_DIR/tracker/fails/$f \
+                  $SCRIPT_DIR/tracker/fails/$summary/
             fi
          else 
             echo "$f is not a file"
