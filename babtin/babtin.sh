@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.1.1
+VERSION=0.1.2
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 WORKING_DIR=/tmp/babtin.$$
@@ -19,10 +19,12 @@ WORKING_SIGINT_FILE=/tmp/babtin.$$/control/sigint
 
 get-test-log () {
    local name=$1
-   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" "no name given"
+   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" \
+      "no name given"
    # For now, just use the test name with a random number appended
    local file_name="$name"
-   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$file_name" "file name empty"
+   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$file_name" \
+      "file name empty"
    echo /tmp/$file_name.$RANDOM
 }
 
@@ -146,9 +148,13 @@ init-working-dir () {
    echo 0 > $WORKING_TOTAL_PASS_FILE
    echo 0 > $WORKING_TOTAL_FAIL_FILE
    mkdir -p /tmp/babtin.$$/control
-   echo 0 > $WORKING_DICE_1_FILE
+   if [ -z $BABTIN_FIRST_DICE ]; then
+      echo 0 > $WORKING_DICE_1_FILE
+      export BABTIN_FIRST_DICE=0
+   else
+      echo $BABTIN_FIRST_DICE > $WORKING_DICE_1_FILE
+   fi
    echo 0 > $WORKING_SIGINT_FILE
-   do-env-import
 }
 
 #
@@ -301,7 +307,7 @@ main () {
    fi
    while :
    do
-      # Practice on Squier tester tester.
+      # Practice with Squier tester tester.
       if [ "$1" == "--selftest" ]; then
          test-squier
       else
