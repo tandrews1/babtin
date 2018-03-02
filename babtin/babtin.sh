@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.4.1
+VERSION=0.5.0
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 WORKING_DIR=/tmp/babtin.$$
@@ -181,7 +181,7 @@ init-working-dir () {
 bug-summary-from-log () {
    local logfile="$1"
    mbs-assert-file "$FUNCNAME" "$LINENO" "$logfile" "arg1 log"
-   local user_supplied_parse="`tester-parse-bug-name-from-log $logfile`"
+   local user_supplied_parse="`tester-get-bug-from-log $logfile`"
    if [ "$user_supplied_parse" != "" ]; then
       user_supplied_parse_safe="`basename $user_supplied_parse`"
       echo "$user_supplied_parse_safe"
