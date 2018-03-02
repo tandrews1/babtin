@@ -8,7 +8,9 @@
 # 6.824 Distributed Systems
 #
 
-# Begin Sandbox helper code ====================================================
+# ==============================================================================
+# Begin Sandbox helper functions
+# ==============================================================================
 
 golab-src-dir () {
    cd $GOPATH && cd src/raft
@@ -57,9 +59,25 @@ golab-test-with-dice-races () {
 # =============================================================================
 
 #
+# tester-get-bug-summary-from-log --
+#
+# Given a failing log, you have the option to dig out a reasonable bug summary
+# to use as an identifier for duplicates.
+#
+tester-get-bug-summary-from-log () {
+   local failing_logfile="$1"
+   # Soon...
+   #
+   # Grep the log 
+   # echo "this is the bug summary we found"
+   #
+}
+
+#
 # tester-summary -- 
 #
-# Called when SIGINT (ctrl-c) is received.
+# Called when SIGINT (ctrl-c) is received and the framework pauses to show
+# status.
 #
 tester-summary () {
    echo "GOPATH=$GOPATH"

@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.4.0
+VERSION=0.4.1
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 WORKING_DIR=/tmp/babtin.$$
@@ -172,7 +172,7 @@ init-working-dir () {
 }
 
 #
-# Searches common strings like ASSERT, error, fail, exception,
+# Searches common strings like ASSERT, error, fail, exception, and panic.
 # and tries to smash out a single_underscored_summary as a rough summary of
 # the error, potentially for a file or directory name.
 #
@@ -181,12 +181,25 @@ init-working-dir () {
 bug-summary-from-log () {
    local logfile="$1"
    mbs-assert-file "$FUNCNAME" "$LINENO" "$logfile" "arg1 log"
-   local search_regex="assert[^a-zA-Z]\|fail[^a-zA-Z]\|error[^a-zA-Z]"
+   local user_supplied_parse="`tester-parse-bug-name-from-log $logfile`"
+   if [ "$user_supplied_parse" != "" ]; then
+      user_supplied_parse_safe="`basename $user_supplied_parse`"
+      echo "$user_supplied_parse_safe"
+      return
+   fi 
+   # 
+   # else: Sandbox function did not echo a bug summary.
+   #
+   # They didn't specify any bug name from the sandbox function, so do our best
+   # to dig one out through looking for assert, fail, error, exception, and 
+   # panic strings.
+   #
+   local search_regex="assert[^a-zA-Z]\|fail[^a-zA-Z]\|error[^a-zA-Z]\|exception[^a-zA-Z]\|panic[^a-zA-Z]"
    #echo "searching"
    #echo "grep -m 1 \"$search_regex\" -i $logfile"
    local search_result="`grep -m 1 \"$search_regex\" -i $logfile`"
    if [ "$search_result" != "" ]; then
-      local error_regex=".*assert[^a-zA-Z]\|.*fail[^a-zA-Z]\|.*error[^a-zA-Z]"
+      local error_regex="^.*assert[^a-zA-Z]\|^.*fail[^a-zA-Z]\|^.*error[^a-zA-Z]\|^.*exception[^a-zA-Z]\|^.*panic[^a-zA-Z]"
       #echo "echo \"$search_result\" |sed -e \"s/$error_regex//i\""
       local error_grab="`echo \"$search_result\" \
          |sed -e \"s/$error_regex//i\"`"
@@ -208,7 +221,10 @@ test-fail () {
    local summary="`bug-summary-from-log $logfile`"
    # Leave a basename for security so logs can't somehow create
    # other paths all over the place.
-   local summary_safe="`basename $summary`"
+   local summary_safe="$summary"
+   if [ "$summary" != "" ]; then 
+      local summary_safe="`basename $summary`"
+   fi
    if [ "$summary" != "" ]; then
       if [ ! -d "$SCRIPT_DIR/tracker/fails/$summary" ]; then
          io-hey "NEW BUG: $summary"
@@ -219,6 +235,8 @@ test-fail () {
       mv $logfile "$SCRIPT_DIR/tracker/fails/$summary"
    else
       echo "Could not auto-triage failure :("
+      mkdir -p "$SCRIPT_DIR/tracker/fails/unknown"
+      mv $logfile "$SCRIPT_DIR/tracker/fails/unknown"
    fi
    if [ "`which tree`" != "" ]; then
       tree -ChD $SCRIPT_DIR/tracker/fails
