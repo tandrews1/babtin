@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.5.3
+VERSION=0.5.4
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 WORKING_DIR=/tmp/babtin.$$
@@ -141,10 +141,10 @@ handle-sigint () {
 do-summary () {
    local time="`time-seconds-to-human $SECONDS`"
    do-env-import
-   #if [ "`which tree`" != "" ]; then
-   #   tree -ChD $SCRIPT_DIR/tracker/fails
-   #fi
-   ls -ltrh $SCRIPT_DIR/tracker/fails
+   if [ "`which tree`" != "" ]; then
+      tree -ChD $SCRIPT_DIR/tracker/fails
+   fi
+   #ls -ltrh $SCRIPT_DIR/tracker/fails
    echo -en "`io-color-start green`$BABTIN_TEST_PASS pass streak ($time)`io-color-stop green` | "
    if [ $BABTIN_TEST_FAIL -gt 0 ]; then
       echo -en "`io-color-start red`"
@@ -247,9 +247,10 @@ test-fail () {
       mkdir -p "$SCRIPT_DIR/tracker/fails/unknown"
       mv $logfile "$SCRIPT_DIR/tracker/fails/unknown"
    fi
-   if [ "`which tree`" != "" ]; then
-      tree -ChD $SCRIPT_DIR/tracker/fails
-   fi
+   #if [ "`which tree`" != "" ]; then
+   #   tree -ChD $SCRIPT_DIR/tracker/fails
+   #fi
+   ls -ltrh $SCRIPT_DIR/tracker/fails
    do-env-import
    export BABTIN_TEST_FAIL=$((BABTIN_TEST_FAIL+1))
    # Start the passing streak over...
