@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.5.0
+VERSION=0.5.2
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 WORKING_DIR=/tmp/babtin.$$
@@ -182,13 +182,15 @@ bug-summary-from-log () {
    local logfile="$1"
    mbs-assert-file "$FUNCNAME" "$LINENO" "$logfile" "arg1 log"
    local user_supplied_parse="`tester-get-bug-from-log $logfile`"
+   local user_supplied_parse_safe=""
    if [ "$user_supplied_parse" != "" ]; then
       user_supplied_parse_safe="`basename $user_supplied_parse`"
-      echo "$user_supplied_parse_safe"
-      return
+      #echo "$user_supplied_parse_safe"
+      #return
    fi 
    # 
-   # else: Sandbox function did not echo a bug summary.
+   # else: Sandbox function may not have echoed a bug summary, so look for
+   # common failure strings.
    #
    # They didn't specify any bug name from the sandbox function, so do our best
    # to dig one out through looking for assert, fail, error, exception, and 
@@ -198,17 +200,23 @@ bug-summary-from-log () {
    #echo "searching"
    #echo "grep -m 1 \"$search_regex\" -i $logfile"
    local search_result="`grep -m 1 \"$search_regex\" -i $logfile`"
+   local first_try=""
    if [ "$search_result" != "" ]; then
       local error_regex="^.*assert[^a-zA-Z]\|^.*fail[^a-zA-Z]\|^.*error[^a-zA-Z]\|^.*exception[^a-zA-Z]\|^.*panic[^a-zA-Z]"
       #echo "echo \"$search_result\" |sed -e \"s/$error_regex//i\""
       local error_grab="`echo \"$search_result\" \
          |sed -e \"s/$error_regex//i\"`"
-      local smash_regex="[^A-Za-z0-9._-]"
+      local smash_regex="[^A-Za-z_-]"
       #echo "smashin"
       #echo "echo \"$error_grab\" |sed -e s/\"$smash_regex\"/_/g"
-      local first_try="`echo \"$error_grab\" \
-         |sed -e s/\"$smash_regex\"/_/g`"
-      echo $first_try
+      first_try="`echo \"$error_grab\" |sed -e s/\"$smash_regex\"/_/g`"
+   fi
+   # If the user was able to dig out something, append that before our
+   # default parsing.
+   if [  "$user_supplied_parse_safe" == "" ]; then
+      echo "$first_try"
+   else
+      printf "%s_%s" "$user_supplied_parse_safe" "$first_try"
    fi
 }
 

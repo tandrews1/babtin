@@ -66,12 +66,13 @@ golab-test-with-dice-races () {
 #
 tester-get-bug-from-log () {
    local failing_logfile="$1"
-
+  
+   return 
    # Set up for 6.824 Go lab tester FAIL output with error right on next line
 
    # Replace nonsafe chars in summary string with _
-   local namesafe_regex="[^A-Za-z0-9._-]"
-   grep "FAIL.*" -A 1 -m 1 $failing_logfile |paste -s |sed -e "s/.*Test.*\: //" |sed -e "s/$namesafe_regex/_/g"
+   #local namesafe_regex="[^A-Za-z0-9._-]"
+   #grep "FAIL.*" -A 1 -m 1 $failing_logfile |paste -s |sed -e "s/.*Test.*\: //" |sed -e "s/$namesafe_regex/_/g"
 }
 
 #
