@@ -8,7 +8,8 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.5.4
+VERSION=0.6.0
+SELFTEST=0
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 WORKING_DIR=/tmp/babtin.$$
@@ -57,9 +58,10 @@ do-title () {
    echo "`io-color-start green`Sir Babtin v$VERSION "
    do-graphic
    echo "`io-color-stop green`"
-   echo "WORKING_DIR=$WORKING_DIR"
+   echo "SELFTEST                 =$SELFTEST"
+   echo "WORKING_DIR              =$WORKING_DIR"
    echo "BABTIN_FIRST_DICE_TRIGGER=$BABTIN_FIRST_DICE/6"
-   echo "Ctrl-C for overall testing status. Double Ctrl-C to exit."
+   echo "Ctrl-C to pause and babtin cmd prompt"
    echo ""
 }
 
@@ -118,7 +120,8 @@ do-env-import () {
 do-exit () {
    echo "Exiting..."
    echo  "WORKING_DIR=$WORKING_DIR"
-   # Any more cleanup?
+   # If sick of all the temporary directories
+   #rm $WORKING_DIR
    exit 0
 }
 
@@ -142,6 +145,7 @@ do-summary () {
    local time="`time-seconds-to-human $SECONDS`"
    do-env-import
    if [ "`which tree`" != "" ]; then
+      echo ""
       tree -ChD $SCRIPT_DIR/tracker/fails
    fi
    #ls -ltrh $SCRIPT_DIR/tracker/fails
@@ -182,13 +186,17 @@ init-working-dir () {
 bug-summary-from-log () {
    local logfile="$1"
    mbs-assert-file "$FUNCNAME" "$LINENO" "$logfile" "arg1 log"
-   local user_supplied_parse="`tester-get-bug-from-log $logfile`"
+   local user_supplied_parse=""
    local user_supplied_parse_safe=""
-   if [ "$user_supplied_parse" != "" ]; then
-      user_supplied_parse_safe="`basename $user_supplied_parse`"
-      #echo "$user_supplied_parse_safe"
-      #return
-   fi 
+   if [ $SELFTEST == 0 ]; then
+      user_supplied_parse="`tester-get-bug-from-log $logfile`"
+      user_supplied_parse_safe=""
+      if [ "$user_supplied_parse" != "" ]; then
+         user_supplied_parse_safe="`basename $user_supplied_parse`"
+         #echo "$user_supplied_parse_safe"
+         #return
+      fi 
+   fi
    # 
    # else: Sandbox function may not have echoed a bug summary, so look for
    # common failure strings.
@@ -236,10 +244,10 @@ test-fail () {
    fi
    if [ "$summary" != "" ]; then
       if [ ! -d "$SCRIPT_DIR/tracker/fails/$summary" ]; then
-         io-hey "NEW BUG: $summary"
+         echo -e "`io-color-start red`NEW BUG: $summary`io-color-stop red`"
          mkdir -p "$SCRIPT_DIR/tracker/fails/$summary"
       else 
-         echo "Another occurance of $summary"
+         echo "It's another $summary"
       fi
       mv $logfile "$SCRIPT_DIR/tracker/fails/$summary"
    else
@@ -247,10 +255,6 @@ test-fail () {
       mkdir -p "$SCRIPT_DIR/tracker/fails/unknown"
       mv $logfile "$SCRIPT_DIR/tracker/fails/unknown"
    fi
-   #if [ "`which tree`" != "" ]; then
-   #   tree -ChD $SCRIPT_DIR/tracker/fails
-   #fi
-   ls -ltrh $SCRIPT_DIR/tracker/fails
    do-env-import
    export BABTIN_TEST_FAIL=$((BABTIN_TEST_FAIL+1))
    # Start the passing streak over...
@@ -301,6 +305,9 @@ test-squier () {
 }
 
 main () {
+   if [ "$1" == "--selftest" ]; then
+      export SELFTEST=1
+   fi
    shopt -s nullglob
    # Use MBS for testing until util functions inlined...
    source $MBS_ROOT_DIR/core/mbs.sh > /dev/null
@@ -351,13 +358,13 @@ main () {
    # Run tester until killed with double SIGINT
    export SECONDS=0
    . $SCRIPT_DIR/sandbox.sh
-   if [ "$1" != "--selftest" ]; then
+   if [ $SELFTEST == 0 ]; then
       tester-begin 
    fi
    while :
    do
       # Practice with Squier tester tester.
-      if [ "$1" == "--selftest" ]; then
+      if [ $SELFTEST == 1 ]; then
          test-squier
       else
          # If they dare to change running test code,
