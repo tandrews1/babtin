@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.5.2
+VERSION=0.5.3
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 WORKING_DIR=/tmp/babtin.$$
@@ -141,9 +141,10 @@ handle-sigint () {
 do-summary () {
    local time="`time-seconds-to-human $SECONDS`"
    do-env-import
-   if [ "`which tree`" != "" ]; then
-      tree -ChD $SCRIPT_DIR/tracker/fails
-   fi
+   #if [ "`which tree`" != "" ]; then
+   #   tree -ChD $SCRIPT_DIR/tracker/fails
+   #fi
+   ls -ltrh $SCRIPT_DIR/tracker/fails
    echo -en "`io-color-start green`$BABTIN_TEST_PASS pass streak ($time)`io-color-stop green` | "
    if [ $BABTIN_TEST_FAIL -gt 0 ]; then
       echo -en "`io-color-start red`"
