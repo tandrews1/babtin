@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.6.1
+VERSION=0.6.3
 SELFTEST=0
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -159,6 +159,7 @@ do-summary () {
    else 
       echo ""
    fi
+   echo "WORKING_DIR=$WORKING_DIR"
    tester-summary
 }
 
@@ -223,9 +224,11 @@ bug-summary-from-log () {
    # If the user was able to dig out something, append that before our
    # default parsing.
    if [  "$user_supplied_parse_safe" == "" ]; then
-      echo "$first_try"
+      # Final trim... get rid of tons of underscores...
+      echo "$first_try" |sed -e "s/__//g"
    else
-      printf "%s_%s" "$user_supplied_parse_safe" "$first_try"
+      # Final trim... get rid of tons of underscores...
+      printf "%s_%s" "$user_supplied_parse_safe" "$first_try" |sed -e "s/__//g"
    fi
 }
 
