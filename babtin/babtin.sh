@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.6.0
+VERSION=0.6.1
 SELFTEST=0
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -146,7 +146,7 @@ do-summary () {
    do-env-import
    if [ "`which tree`" != "" ]; then
       echo ""
-      tree -ChD $SCRIPT_DIR/tracker/fails
+      tree -ChDdt  $SCRIPT_DIR/tracker/fails
    fi
    #ls -ltrh $SCRIPT_DIR/tracker/fails
    echo -en "`io-color-start green`$BABTIN_TEST_PASS pass streak ($time)`io-color-stop green` | "
