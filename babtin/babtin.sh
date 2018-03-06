@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.6.5
+VERSION=0.7.0
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Files for syncing state to disk for eventual sharing between processes
@@ -21,13 +21,186 @@ FAIL_DIR=$SCRIPT_DIR/tracker/fails
 RUNNING_DIR=$SCRIPT_DIR/tracker/running/pid.$$/
 SELFTEST=0
 
+#
+# io-color-start -- 
+#
+#    Echo codes to make colors.
+#
+io-color-start () {
+   local color=$1
+   if [ "$color" == "red" ]; then
+      echo "\e[00;31m"
+   elif [ "$color" == "green" ]; then
+      echo -e "\e[32m"
+   else
+      io-exception "Unknown color '$1'"
+   fi
+}
+
+#
+# io-color-stop --
+#
+#    Echo stop color codes.
+#
+io-color-stop () {
+   local color=$1
+   if [ "$color" == "red" ]; then
+      echo "\e[00m"
+   elif [ "$color" == "green" ]; then
+      echo -e "\e[39m"
+   else
+      io-exception "Unknown stop color '$1'"
+   fi
+}
+
+#
+# io-exception --
+#
+#    Show something bad happened. Encourage user to terminate execution.
+#
+io-exception () {
+   local msg=$1
+   local hint=$2
+   if [ "`uname`" != "Darwin" ]; then
+      echo -e "`io-color-start red`EXCEPTION:`io-color-stop red` $msg ($hint)"
+      echo -e "Press ctrl-c to break, or else to continue (not recommended)."
+   else
+      echo -e "EXCEPTION: $msg $hint"
+      echo -e "Press ctrl-c to break, or else to continue (not recommened)."
+   fi
+   # pause
+   read -p ""
+}
+
+#
+# assert-integer --
+#
+#    Assert that a given value is a positive integer value.
+#
+#    usage: 'assert-integer $FUNCNAME $LINENO <val>'
+#       ex: 'assert-integer $FUNCNAME $LINENO <val>'
+assert-integer () {
+   local func="$1"
+   local line="$2"
+   local val="$3"
+   if ! [[ "$val" =~ ^[0-9]+$ ]] ; then
+      io-exception "$func:$line val '$val' is not an integer and it should be!"
+   fi
+}
+
+# 
+# assert-zero --
+#
+#    Expect a zero value otherwise execption.
+#
+assert-zero () {
+   local function="$1"
+   local lineno="$2" 
+   local val="$3"
+   local msg="$4"
+   if [ "$val" != "0" ]; then
+      io-exception "assert-not-zero@$function:$lineno:" "$msg"
+   fi
+}
+
+#
+#  assert-file --
+#
+#    Assert that a given file exists.
+#
+#    usage: 'assert-file $FUNCNAME $LINENO <file> <hint>'
+#       ex: 'assert-file $FUNCNAME $LINENO <file> <hint>'
+#
+assert-file () {
+   local func="$1"
+   local line="$2"
+   local file="$3"
+   local hint="$4"
+   if [ "$func" == "" ]; then
+      io-exception "assert-file: (Arg1 is blank)" "$hint"
+   fi
+   if [ "$line" == "" ]; then
+      io-exception "$func:$line assert-file: (Arg2 is blank)" "$hint"
+   fi
+   if [ "$file" == "" ]; then
+      io-exception "$func:$line: assert-file: (Arg3 is blank)" "$hint"
+   fi
+   if [ "$hint" == "" ]; then
+      io-exception "$func:$line: assert-file: (Arg4 is blank)"
+   fi
+   if [ ! -f "$file" ] ; then
+      io-exception "$func:$line: assert-file FAIL:" "$hint"
+   fi
+}
+
+#
+# assert-not-empty -- 
+#
+#    Expect a non-empty value otherwise exception.
+#    usage: 'assert-not-empty <$FUNCTION> <$LINENO> <val> [<msg>]'
+#
+assert-not-empty () {
+   local function="$1"
+   local lineno="$2"
+   local val="$3"
+   local msg="$4"
+   if [ "$val" == "" ]; then
+      io-exception "assert-not-empty@$function:$lineno:" "$msg"
+   fi
+}
+
+#
+# time-seconds-to-human --
+#
+#    Convert seconds to a human readable string describing the duration.
+#
+#    Based on http://stackoverflow.com/questions/12199631/
+#                convert-seconds-to-hours-minutes-seconds
+#
+#    usage: 'time-seconds-to-human <seconds>'
+#       ex: 'time-seconds-to-human 124567'
+#
+time-seconds-to-human () {
+    num=$1
+    min=0
+    hour=0
+    day=0
+    if((num>59));then
+        ((sec=num%60))
+        ((num=num/60))
+        if((num>59));then
+            ((min=num%60))
+            ((num=num/60))
+            if((num>23));then
+                ((hour=num%24))
+                ((day=num/24))
+            else
+                ((hour=num))
+            fi
+        else
+            ((min=num))
+        fi
+    else
+        ((sec=num))
+    fi
+    echo "$day"d "$hour"h "$min"m "$sec"s
+}
+
+
+
+#
+# get-test-log --
+#
+#      Produces a file path in the tracker's running directory where we can dump
+#      the output of the current running test instance.
+#
 get-test-log () {
    local name=$1
-   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" \
+   assert-not-empty "$FUNCNAME" "$LINENO" "$name" \
       "no name given"
    # For now, just use the test name with a random number appended
    local file_name="$name"
-   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$file_name" \
+   assert-not-empty "$FUNCNAME" "$LINENO" "$file_name" \
       "file name empty"
    echo $RUNNING_DIR/$file_name.$RANDOM
 }
@@ -76,6 +249,9 @@ dump-env () {
 }
 
 # Sync state to disk from env.
+# TODO: in progress. no watchdog timer for catching timeouts implemented yet.
+#       workaround is noticing test has not moved in some time, killing tester
+#       and looking at the output in the tracker's running directory.
 do-env-export () {
    #TODO wait on .lck file
    #TODO acquire .lck file
@@ -83,20 +259,20 @@ do-env-export () {
    local fails_file="$WORKING_TOTAL_FAIL_FILE"
    local die_1_file="$WORKING_DICE_1_FILE"
    local sigint_file="$WORKING_SIGINT_FILE"
-   mbs-assert-file "$FUNCNAME" "$LINENO" "$passes_file" "pass file not found"
-   mbs-assert-file "$FUNCNAME" "$LINENO" "$fails_file" "fail file not found"
-   mbs-assert-file "$FUNCNAME" "$LINENO" "$die_1_file" "fail file not found"
-   mbs-assert-file "$FUNCNAME" "$LINENO" "$sigint_file" "sigint file not found"
-   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$BABTIN_TEST_PASS" "passes empty"
-   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$BABTIN_TEST_FAIL" "fails empty"
-   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$BABTIN_1ST_DICE" "die empty"
-   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$SIGINT_SKIP" "sigint empty"
+   assert-file "$FUNCNAME" "$LINENO" "$passes_file" "pass file not found"
+   assert-file "$FUNCNAME" "$LINENO" "$fails_file" "fail file not found"
+   assert-file "$FUNCNAME" "$LINENO" "$die_1_file" "fail file not found"
+   assert-file "$FUNCNAME" "$LINENO" "$sigint_file" "sigint file not found"
+   assert-not-empty "$FUNCNAME" "$LINENO" "$BABTIN_TEST_PASS" "passes empty"
+   assert-not-empty "$FUNCNAME" "$LINENO" "$BABTIN_TEST_FAIL" "fails empty"
+   assert-not-empty "$FUNCNAME" "$LINENO" "$BABTIN_1ST_DICE" "die empty"
+   assert-not-empty "$FUNCNAME" "$LINENO" "$SIGINT_SKIP" "sigint empty"
    #TODO release .lck file
    echo $BABTIN_TEST_PASS > $passes_file   && \
       echo $BABTIN_TEST_FAIL > $fails_file && \
       echo $BABTIN_1ST_DICE > $die_1_file     && \
       echo $SIGINT_SKIP > $sigint_file 
-   mbs-assert-zero "$FUNCNAME" "$LINENO" "$?" "save failed"
+   assert-zero "$FUNCNAME" "$LINENO" "$?" "save failed"
 }
 
 # Sync state from disk into env.
@@ -107,23 +283,23 @@ do-env-import () {
    local fails_file="$WORKING_TOTAL_FAIL_FILE"
    local die_1_file="$WORKING_DICE_1_FILE"
    local sigint_file="$WORKING_SIGINT_FILE"
-   mbs-assert-file "$FUNCNAME" "$LINENO" "$passes_file" "pass file not found"
-   mbs-assert-file "$FUNCNAME" "$LINENO" "$fails_file" "fail file not found"
-   mbs-assert-file "$FUNCNAME" "$LINENO" "$die_1_file" "die 1 file not found"
-   mbs-assert-file "$FUNCNAME" "$LINENO" "$sigint_file" "sigint file not found"
+   assert-file "$FUNCNAME" "$LINENO" "$passes_file" "pass file not found"
+   assert-file "$FUNCNAME" "$LINENO" "$fails_file" "fail file not found"
+   assert-file "$FUNCNAME" "$LINENO" "$die_1_file" "die 1 file not found"
+   assert-file "$FUNCNAME" "$LINENO" "$sigint_file" "sigint file not found"
    local passes="`cat $passes_file`"
    local fails="`cat $fails_file`"
    local first_dice="`cat $die_1_file`"
    local sigint_status="`cat $sigint_file`"
    #TODO release .lck file
-   mbs-assert-integer "$FUNCNAME" "$LINENO" "$passes" "passes not int"
-   mbs-assert-integer "$FUNCNAME" "$LINENO" "$fails" "fails not int"
-   mbs-assert-integer "$FUNCNAME" "$LINENO" "$first_dice" "die 1 not int"
+   assert-integer "$FUNCNAME" "$LINENO" "$passes" "passes not int"
+   assert-integer "$FUNCNAME" "$LINENO" "$fails" "fails not int"
+   assert-integer "$FUNCNAME" "$LINENO" "$first_dice" "die 1 not int"
    export BABTIN_TEST_PASS=$passes   && \
       export BABTIN_TEST_FAIL=$fails && \
       export BABTIN_1ST_DICE=$first_dice && \
       export SIGINT_SKIP=$sigint_status
-   mbs-assert-zero "$FUNCNAME" "$LINENO" "$?" "import failed"
+   assert-zero "$FUNCNAME" "$LINENO" "$?" "import failed"
 }
 
 do-exit () {
@@ -201,7 +377,7 @@ init-working-dir () {
 #
 bug-summary-from-log () {
    local logfile="$1"
-   mbs-assert-file "$FUNCNAME" "$LINENO" "$logfile" "arg1 log"
+   assert-file "$FUNCNAME" "$LINENO" "$logfile" "arg1 log"
    local user_supplied_parse=""
    local user_supplied_parse_safe=""
    if [ $SELFTEST == 0 ]; then
@@ -247,7 +423,7 @@ bug-summary-from-log () {
 
 test-fail () {
    local logfile="$1"
-   mbs-assert-file "$FUNCNAME" "$LINENO" "$logfile" "arg1 log"
+   assert-file "$FUNCNAME" "$LINENO" "$logfile" "arg1 log"
    echo -e "`io-color-start red`FAIL `io-color-stop red`"
    # Specifically leave out of quotes to truncate any spaces.
    # Bug summary from log needs more testing.
@@ -281,7 +457,7 @@ test-fail () {
 
 test-pass () {
    local logfile="$1"
-   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$logfile" "log file empty"
+   assert-not-empty "$FUNCNAME" "$LINENO" "$logfile" "log file empty"
    echo "`io-color-start green`PASS `io-color-stop green`"
    do-env-import
    export BABTIN_TEST_PASS=$((BABTIN_TEST_PASS+1))
@@ -292,8 +468,8 @@ test-pass () {
 tester-test-cmd () {
    local name="$1"
    local cmd="$2"
-   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$name" "arg1 empty"
-   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$cmd" "arg2 empty"
+   assert-not-empty "$FUNCNAME" "$LINENO" "$name" "arg1 empty"
+   assert-not-empty "$FUNCNAME" "$LINENO" "$cmd" "arg2 empty"
    local logfile="`get-test-log $name`"
    printf "(%-14s) %16s: " "`time-seconds-to-human $SECONDS`" "$name"
    $cmd &> $logfile
@@ -301,7 +477,7 @@ tester-test-cmd () {
    # If we handled a sigint and returned, then just abort the current test...
    if [ $cmd_exit != 0 ]; then
       do-env-import
-      mbs-assert-integer "$FUNCNAME" "$LINENO" "$SIGINT_SKIP" \
+      assert-integer "$FUNCNAME" "$LINENO" "$SIGINT_SKIP" \
          "SIGINT skip not synced right"
       if [ $SIGINT_SKIP == 1 ]; then
          trap handle-sigint SIGINT
@@ -334,8 +510,6 @@ main () {
       export SELFTEST=1
    fi
    shopt -s nullglob
-   # Use MBS for testing until util functions inlined...
-   source $MBS_ROOT_DIR/core/mbs.sh > /dev/null
  
    # Create bug tracking structure
    init-tracker
