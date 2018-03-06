@@ -32,11 +32,11 @@ golab-test-races() {
    local name="$1"
    golab-src-dir
    if [ ! -z $THA_GO_DEBUG ]; then
-      tester-test-cmd "debug-$THA_GO_DEBUG-$name-race_$BABTIN_FIRST_DICE" \
+      tester-test-cmd "debug-$THA_GO_DEBUG-$name-race_$BABTIN_1ST_DICE" \
          "go test -run $name"
       return $?
    else
-      tester-test-cmd "release-$name-race_$BABTIN_FIRST_DICE" \
+      tester-test-cmd "release-$name-race_$BABTIN_1ST_DICE" \
          "go test -run $name"
       return $?
    fi
@@ -45,7 +45,7 @@ golab-test-races() {
 golab-test-with-dice-races () {
    local name="$1" 
    let "die = $RANDOM % 6 + 1"
-   if [ $die -le $BABTIN_FIRST_DICE ]; then
+   if [ $die -le $BABTIN_1ST_DICE ]; then
       golab-test-races $name
       return $?
    else 
@@ -83,7 +83,7 @@ tester-get-bug-from-log () {
 #
 tester-summary () {
    echo "GOPATH=$GOPATH"
-   echo "RACE_DICE=$BABTIN_FIRST_DICE"
+   echo "RACE_FLAG_DICE_VAL=$BABTIN_1ST_DICE"
 }
 
 # 
@@ -97,8 +97,8 @@ tester-begin () {
       io-error "GOPATH not set."
       exit 1
    fi
-   if [ -z $BABTIN_FIRST_DICE ]; then 
-      io-error "BABTIN_FIRST_DICE not set."
+   if [ -z $BABTIN_1ST_DICE ]; then 
+      io-error "BABTIN_1ST_DICE not set."
       exit 1
    fi
 }

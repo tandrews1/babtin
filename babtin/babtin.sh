@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.6.3
+VERSION=0.6.4
 SELFTEST=0
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -17,6 +17,8 @@ WORKING_TOTAL_PASS_FILE=/tmp/babtin.$$/status/total_pass
 WORKING_TOTAL_FAIL_FILE=/tmp/babtin.$$/status/total_fail
 WORKING_DICE_1_FILE=/tmp/babtin.$$/control/first_dice
 WORKING_SIGINT_FILE=/tmp/babtin.$$/control/sigint
+FAIL_DIR=$SCRIPT_DIR/tracker/fails
+RUNNING_DIR=$SCRIPT_DIR/tracker/running/pid.$$/
 
 get-test-log () {
    local name=$1
@@ -26,7 +28,7 @@ get-test-log () {
    local file_name="$name"
    mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$file_name" \
       "file name empty"
-   echo /tmp/$file_name.$RANDOM
+   echo $RUNNING_DIR/$file_name.$RANDOM
 }
 
 do-graphic () {
@@ -55,12 +57,12 @@ do-graphic () {
 
 do-title () {
    echo ""
-   echo "`io-color-start green`Sir Babtin v$VERSION "
+   echo "`io-color-start green`B.a.b.t.i.n. v$VERSION "
    do-graphic
    echo "`io-color-stop green`"
    echo "SELFTEST                 =$SELFTEST"
    echo "WORKING_DIR              =$WORKING_DIR"
-   echo "BABTIN_FIRST_DICE_TRIGGER=$BABTIN_FIRST_DICE/6"
+   echo "BABTIN_1ST_DICE    roll <=$BABTIN_1ST_DICE/6"
    echo "Ctrl-C to pause and babtin cmd prompt"
    echo ""
 }
@@ -68,12 +70,14 @@ do-title () {
 dump-env () {
    echo "BABTIN_TEST_PASS=$BABTIN_TEST_PASS"
    echo "BABTIN_TEST_FAIL=$BABTIN_TEST_FAIL"
-   echo "BABTIN_FIRST_DICE=$BABTIN_FIRST_DICE"
+   echo "BABTIN_1ST_DICE=$BABTIN_1ST_DICE"
    echo "SIGINT_SKIP=$SIGINT_SKIP"
 }
 
 # Sync state to disk from env.
 do-env-export () {
+   #TODO wait on .lck file
+   #TODO acquire .lck file
    local passes_file="$WORKING_TOTAL_PASS_FILE"
    local fails_file="$WORKING_TOTAL_FAIL_FILE"
    local die_1_file="$WORKING_DICE_1_FILE"
@@ -84,17 +88,20 @@ do-env-export () {
    mbs-assert-file "$FUNCNAME" "$LINENO" "$sigint_file" "sigint file not found"
    mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$BABTIN_TEST_PASS" "passes empty"
    mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$BABTIN_TEST_FAIL" "fails empty"
-   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$BABTIN_FIRST_DICE" "die empty"
+   mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$BABTIN_1ST_DICE" "die empty"
    mbs-assert-not-empty "$FUNCNAME" "$LINENO" "$SIGINT_SKIP" "sigint empty"
+   #TODO release .lck file
    echo $BABTIN_TEST_PASS > $passes_file   && \
       echo $BABTIN_TEST_FAIL > $fails_file && \
-      echo $BABTIN_FIRST_DICE > $die_1_file     && \
+      echo $BABTIN_1ST_DICE > $die_1_file     && \
       echo $SIGINT_SKIP > $sigint_file 
    mbs-assert-zero "$FUNCNAME" "$LINENO" "$?" "save failed"
 }
 
 # Sync state from disk into env.
 do-env-import () {
+   #TODO wait on a .lck file
+   #TODO acquire a .lck file
    local passes_file="$WORKING_TOTAL_PASS_FILE"
    local fails_file="$WORKING_TOTAL_FAIL_FILE"
    local die_1_file="$WORKING_DICE_1_FILE"
@@ -107,22 +114,23 @@ do-env-import () {
    local fails="`cat $fails_file`"
    local first_dice="`cat $die_1_file`"
    local sigint_status="`cat $sigint_file`"
+   #TODO release .lck file
    mbs-assert-integer "$FUNCNAME" "$LINENO" "$passes" "passes not int"
    mbs-assert-integer "$FUNCNAME" "$LINENO" "$fails" "fails not int"
    mbs-assert-integer "$FUNCNAME" "$LINENO" "$first_dice" "die 1 not int"
    export BABTIN_TEST_PASS=$passes   && \
       export BABTIN_TEST_FAIL=$fails && \
-      export BABTIN_FIRST_DICE=$first_dice && \
+      export BABTIN_1ST_DICE=$first_dice && \
       export SIGINT_SKIP=$sigint_status
    mbs-assert-zero "$FUNCNAME" "$LINENO" "$?" "import failed"
 }
 
 do-exit () {
    echo "Exiting..."
-   echo  "WORKING_DIR=$WORKING_DIR"
-   # If sick of all the temporary directories
-   #rm $WORKING_DIR
-   exit 0
+   echo "In-progress test output left at $RUNNING_DIR"
+   rm -r $WORKING_DIR && exit 0 
+   # If remove failed exit with status 1. Kind of hacky but saves some lines...
+   exit 1
 }
 
 handle-sigint () {
@@ -146,9 +154,9 @@ do-summary () {
    do-env-import
    if [ "`which tree`" != "" ]; then
       echo ""
-      tree -ChDdt  $SCRIPT_DIR/tracker/fails
+      tree -ChDdt  $FAIL_DIR
    fi
-   #ls -ltrh $SCRIPT_DIR/tracker/fails
+   #ls -ltrh $FAIL_DIR
    echo -en "`io-color-start green`$BABTIN_TEST_PASS pass streak ($time)`io-color-stop green` | "
    if [ $BABTIN_TEST_FAIL -gt 0 ]; then
       echo -en "`io-color-start red`"
@@ -163,16 +171,22 @@ do-summary () {
    tester-summary
 }
 
+#
+# TODO:
+# Necessary to sync stuff to disk in preparation for a watchdog timer thread
+# that can shoot down long running tests with a timeout before other things
+# go horribly wrong.
+#
 init-working-dir () {
    mkdir -p $WORKING_DIR/status
    echo 0 > $WORKING_TOTAL_PASS_FILE
    echo 0 > $WORKING_TOTAL_FAIL_FILE
    mkdir -p /tmp/babtin.$$/control
-   if [ -z $BABTIN_FIRST_DICE ]; then
+   if [ -z $BABTIN_1ST_DICE ]; then
       echo 0 > $WORKING_DICE_1_FILE
-      export BABTIN_FIRST_DICE=0
+      export BABTIN_1ST_DICE=0
    else
-      echo $BABTIN_FIRST_DICE > $WORKING_DICE_1_FILE
+      echo $BABTIN_1ST_DICE > $WORKING_DICE_1_FILE
    fi
    echo 0 > $WORKING_SIGINT_FILE
 }
@@ -194,8 +208,6 @@ bug-summary-from-log () {
       user_supplied_parse_safe=""
       if [ "$user_supplied_parse" != "" ]; then
          user_supplied_parse_safe="`basename $user_supplied_parse`"
-         #echo "$user_supplied_parse_safe"
-         #return
       fi 
    fi
    # 
@@ -246,17 +258,17 @@ test-fail () {
       local summary_safe="`basename $summary`"
    fi
    if [ "$summary" != "" ]; then
-      if [ ! -d "$SCRIPT_DIR/tracker/fails/$summary" ]; then
+      if [ ! -d "$FAIL_DIR/$summary" ]; then
          echo -e "`io-color-start red`NEW BUG: $summary`io-color-stop red`"
-         mkdir -p "$SCRIPT_DIR/tracker/fails/$summary"
+         mkdir -p "$FAIL_DIR/$summary"
       else 
          echo "It's another $summary"
       fi
-      mv $logfile "$SCRIPT_DIR/tracker/fails/$summary"
+      mv $logfile "$FAIL_DIR/$summary"
    else
       echo "Could not auto-triage failure :("
-      mkdir -p "$SCRIPT_DIR/tracker/fails/unknown"
-      mv $logfile "$SCRIPT_DIR/tracker/fails/unknown"
+      mkdir -p "$FAIL_DIR/unknown"
+      mv $logfile "$FAIL_DIR/unknown"
    fi
    do-env-import
    export BABTIN_TEST_FAIL=$((BABTIN_TEST_FAIL+1))
@@ -307,6 +319,15 @@ test-squier () {
    tester-test-cmd "squier-$RANDOM" "$SCRIPT_DIR/selftest/squier.sh"
 }
 
+init-tracker () {
+   mkdir -p $FAIL_DIR
+   mkdir -p $RUNNING_DIR 
+   # Not really used anywhere in script... yet.
+   # If used anywhere else, pull into a global.
+   mkdir -p $SCRIPT_DIR/tracker/triaged
+   mkdir -p $SCRIPT_DIR/tracker/resolved
+}
+
 main () {
    if [ "$1" == "--selftest" ]; then
       export SELFTEST=1
@@ -316,24 +337,22 @@ main () {
    source $MBS_ROOT_DIR/core/mbs.sh > /dev/null
  
    # Create bug tracking structure
-   mkdir -p $SCRIPT_DIR/tracker/fails
-   mkdir -p $SCRIPT_DIR/tracker/triaged
-   mkdir -p $SCRIPT_DIR/tracker/resolved
+   init-tracker
 
    # Triage mode...
    if [ "$1" == "--triage" ]; then
       echo "Triaging fails directory..."
       pushd "`pwd`" > /dev/null
-      cd $SCRIPT_DIR/tracker/fails
+      cd $FAIL_DIR
       for f in ./*
       do
          if [ -f "$f" ]; then
             local summary="`bug-summary-from-log $f`"
             echo "Triaging an occurance of $summary"
             if [ "$summary" != "" ]; then
-               mkdir -p $SCRIPT_DIR/tracker/fails/$summary
-               mv $SCRIPT_DIR/tracker/fails/$f \
-                  $SCRIPT_DIR/tracker/fails/$summary/
+               mkdir -p $FAIL_DIR/$summary
+               mv $FAIL_DIR/$f \
+                  $FAIL_DIR/$summary/
             fi
          else 
             echo "$f is not a file"
