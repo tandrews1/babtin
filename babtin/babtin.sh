@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.7.0
+VERSION=0.7.3
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Files for syncing state to disk for eventual sharing between processes
@@ -303,10 +303,12 @@ do-env-import () {
 }
 
 do-exit () {
-   echo "Exiting..."
+   echo ""
    echo "In-progress test output left at $RUNNING_DIR"
-   rm -r $WORKING_DIR && exit 0 
-   # If remove failed exit with status 1. Kind of hacky but saves some lines...
+   echo "Cleaning up..."
+   # Kind of hacky but saves some lines...
+   rm -r $WORKING_DIR && echo echo "Exiting..." && exit 0 
+   # If remove failed exit with non-zero status.
    exit 1
 }
 
@@ -395,7 +397,7 @@ bug-summary-from-log () {
    # to dig one out through looking for assert, fail, error, exception, and 
    # panic strings.
    #
-   local search_regex="assert[^a-zA-Z]\|fail[^a-zA-Z]\|error[^a-zA-Z]\|exception[^a-zA-Z]\|panic[^a-zA-Z]"
+   local search_regex="panic[^a-zA-Z]\|assert[^a-zA-Z]\|exception[^a-zA-Z]\|error[^a-zA-Z]\|fail[^a-zA-Z]"
    #echo "searching"
    #echo "grep -m 1 \"$search_regex\" -i $logfile"
    local search_result="`grep -m 1 \"$search_regex\" -i $logfile`"
@@ -492,8 +494,8 @@ tester-test-cmd () {
    fi
 }
 
-test-squier () {
-   tester-test-cmd "squier-$RANDOM" "$SCRIPT_DIR/selftest/squier.sh"
+test-squire () {
+   tester-test-cmd "squire-$RANDOM" "$SCRIPT_DIR/selftest/squire.sh"
 }
 
 init-tracker () {
@@ -549,20 +551,25 @@ main () {
    # Init our tester's working dir.
    init-working-dir
 
-   # Begin testing.
-   do-title
-
    # Run tester until killed with double SIGINT
    export SECONDS=0
    . $SCRIPT_DIR/sandbox.sh
    if [ $SELFTEST == 0 ]; then
       tester-begin 
+      begin_code=$?
+      if [ $begin_code != 0 ]; then
+         echo "tester-begin returned non-zero... exiting $begin_code"
+         exit $begin_code
+      fi
    fi
+
+   # Begin testing.
+   do-title
    while :
    do
       # Practice with Squier tester tester.
       if [ $SELFTEST == 1 ]; then
-         test-squier
+         test-squire
       else
          # If they dare to change running test code,
          # try and helpfully start running it on next iteration...
