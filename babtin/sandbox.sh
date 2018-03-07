@@ -111,5 +111,5 @@ tester-begin () {
 # iff this function returns non-zero.
 #
 tester-next-test () {
-   golab-test-with-dice-races "2A"
+   golab-test-with-dice-races "TestBackup2B"
 }

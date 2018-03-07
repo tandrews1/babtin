@@ -302,12 +302,16 @@ do-env-import () {
    assert-zero "$FUNCNAME" "$LINENO" "$?" "import failed"
 }
 
-do-exit () {
-   echo ""
-   echo "In-progress test output left at $RUNNING_DIR"
+do-final-cleanup () {
+   echo "Any in-progress test output left at $RUNNING_DIR"
    echo "Cleaning up..."
    # Kind of hacky but saves some lines...
-   rm -r $WORKING_DIR && echo echo "Exiting..." && exit 0 
+   rm -r $WORKING_DIR 
+}
+
+do-exit () {
+   echo ""
+   do-final-cleanup && echo echo "Exiting..." && exit 0 
    # If remove failed exit with non-zero status.
    exit 1
 }
@@ -464,7 +468,11 @@ test-pass () {
    do-env-import
    export BABTIN_TEST_PASS=$((BABTIN_TEST_PASS+1))
    do-env-export
+   #TODO there will be an option to preserve passing logs eventually
+   # if [ ! -z PRESERVE_PASSING_LOGS ]; then ...
    rm $logfile
+   #TODO remove running dir so clean runs don't leave dirs behind
+   #rm -r $RUNNING_DIR
 }
 
 tester-test-cmd () {
@@ -473,7 +481,8 @@ tester-test-cmd () {
    assert-not-empty "$FUNCNAME" "$LINENO" "$name" "arg1 empty"
    assert-not-empty "$FUNCNAME" "$LINENO" "$cmd" "arg2 empty"
    local logfile="`get-test-log $name`"
-   printf "(%-14s) %16s: " "`time-seconds-to-human $SECONDS`" "$name"
+   printf "[iter:%s] (%-14s) %16s: " "$ITERATIONS" \
+      "`time-seconds-to-human $SECONDS`" "$name"
    $cmd &> $logfile
    cmd_exit=$?
    # If we handled a sigint and returned, then just abort the current test...
@@ -510,6 +519,12 @@ init-tracker () {
 main () {
    if [ "$1" == "--selftest" ]; then
       export SELFTEST=1
+   elif [ "$1" == "--iters" ]; then
+      export ITERATIONS=$2
+   fi
+   if [ "$ITERATIONS" == "" ]; then
+      echo "--iters not specified; using --iters inf for continuous testing"
+      export ITERATIONS=inf
    fi
    shopt -s nullglob
  
@@ -571,12 +586,32 @@ main () {
       if [ $SELFTEST == 1 ]; then
          test-squire
       else
+         if [ "$ITERATIONS" != "inf" ]; then
+            assert-integer "$FUNCNAME" "$LINENO" "$ITERATIONS" "ITERATIONS"
+            if [ $ITERATIONS -eq 0 ]; then
+               # End testing
+               break
+            fi
+         fi
          # If they dare to change running test code,
          # try and helpfully start running it on next iteration...
          . $SCRIPT_DIR/sandbox.sh
          tester-next-test $*
+         if [ "$ITERATIONS" != "inf" ]; then
+            assert-integer "$FUNCNAME" "$LINENO" "$ITERATIONS" "ITERATIONS"
+            export ITERATIONS=$((ITERATIONS-1))
+         fi
       fi
    done
+
+   do-summary
+   if [ $BABTIN_TEST_FAIL -gt 0 ]; then
+      echo "Babtin: I found at least one test failed..."
+      exit 1
+   else
+      echo "Babtin: PASSED A BARRAGE OF TESTS!"
+      exit 0
+   fi
 }
 
 # Run!
