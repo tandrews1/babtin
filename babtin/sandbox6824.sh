@@ -281,5 +281,5 @@ tester-post-eval () {
       return 254
    fi
 
-   return $cmd_ext_code
+   return $cmd_exit_code
 }
