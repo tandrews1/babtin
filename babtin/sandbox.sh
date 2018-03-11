@@ -113,3 +113,17 @@ tester-begin () {
 tester-next-test () {
    golab-test-with-dice-races "TestBackup2B"
 }
+
+#
+# tester-post-eval --
+#
+# args: $1 logfile, $2 cmd exit code
+#
+# Responsible for indicating 0 for success, non-zero for failure.
+#
+tester-post-eval () {
+   local logfile="$1"
+   local cmd_exit_code="$2"
+   # No post test evaluation yet.
+   return $cmd_exit_code
+}

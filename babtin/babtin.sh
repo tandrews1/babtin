@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.7.3
+VERSION=0.7.8
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Files for syncing state to disk for eventual sharing between processes
@@ -323,11 +323,14 @@ handle-sigint () {
    local cmd=""
    echo ""
    echo -n "e to exit, enter to continue> "
+   local pause_seconds=$SECONDS
    read cmd
    if [ "$cmd" == "e" -o "$cmd" == "E" -o "$cmd" == "exit" ]; then
       do-exit 
    fi
    echo "Resuming testing..."
+   # Make the pass streak pick up where it left off.
+   export SECONDS=$pause_seconds
    export SIGINT_SKIP=1
    do-env-export
 }
@@ -481,9 +484,11 @@ tester-test-cmd () {
    assert-not-empty "$FUNCNAME" "$LINENO" "$name" "arg1 empty"
    assert-not-empty "$FUNCNAME" "$LINENO" "$cmd" "arg2 empty"
    local logfile="`get-test-log $name`"
-   printf "[iter:%s] (%-14s) %16s: " "$ITERATIONS" \
+   local time_fmt_str="babtintime:real %E\nbabtintime:user %U\nbabtintime:sys %S"
+   printf "[iter:%s] (%16s) %s: " "$ITERATIONS" \
       "`time-seconds-to-human $SECONDS`" "$name"
-   $cmd &> $logfile
+   echo "$cmd" >> $logfile
+   (/usr/bin/time -f "$time_fmt_str" $cmd) &> $logfile
    cmd_exit=$?
    # If we handled a sigint and returned, then just abort the current test...
    if [ $cmd_exit != 0 ]; then
@@ -497,8 +502,16 @@ tester-test-cmd () {
          echo "Starting a new test..."
          return 130
       fi
+      #test-fail "$logfile"
+   fi
+      
+   # Although it looks like it passed, we need to let the sandbox function have
+   # the final call since we can't trust the exit code fully.
+   tester-post-eval "$logfile" "$cmd_exit"
+   sandbox_eval_code=$?
+   if [ $sandbox_eval_code != 0 ]; then
       test-fail "$logfile"
-   else 
+   else
       test-pass "$logfile"
    fi
 }
@@ -582,7 +595,7 @@ main () {
    do-title
    while :
    do
-      # Practice with Squier tester tester.
+      # Practice with Squire tester tester.
       if [ $SELFTEST == 1 ]; then
          test-squire
       else
