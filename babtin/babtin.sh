@@ -316,6 +316,14 @@ do-exit () {
    exit 1
 }
 
+do-reset-tester-stats () {
+   do-env-import
+   export BABTIN_TEST_PASS=0
+   export BABTIN_TEST_FAIL=0
+   export SECONDS=0
+   do-env-export
+}
+
 handle-sigint () {
    do-env-import   
    do-summary
@@ -327,12 +335,16 @@ handle-sigint () {
    read cmd
    if [ "$cmd" == "e" -o "$cmd" == "E" -o "$cmd" == "exit" ]; then
       do-exit 
+   elif [ "$cmd" == "reset" ]; then
+      do-reset-tester-stats
+      echo "Reset tester stats!"
+   else
+      # Make the pass streak pick up where it left off if they resume.
+      export SECONDS=$pause_seconds
    fi
-   echo "Resuming testing..."
-   # Make the pass streak pick up where it left off.
-   export SECONDS=$pause_seconds
    export SIGINT_SKIP=1
    do-env-export
+   echo "Resuming testing..."
 }
 
 do-summary () {
