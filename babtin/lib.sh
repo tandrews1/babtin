@@ -5,12 +5,14 @@
 #
 io-color-start () {
    local color=$1
-   if [ "$color" == "red" ]; then
-      echo "\e[00;31m"
-   elif [ "$color" == "green" ]; then
-      echo -e "\e[32m"
-   else
-      io-exception "Unknown color '$1'"
+   if [ ! -z $BABTIN_COLORS ]; then
+      if [ "$color" == "red" ]; then
+         echo "\e[00;31m"
+      elif [ "$color" == "green" ]; then
+         echo -e "\e[32m"
+      else
+         io-exception "Unknown color '$1'"
+      fi
    fi
 }
 
@@ -21,12 +23,14 @@ io-color-start () {
 #
 io-color-stop () {
    local color=$1
-   if [ "$color" == "red" ]; then
-      echo "\e[00m"
-   elif [ "$color" == "green" ]; then
-      echo -e "\e[39m"
-   else
-      io-exception "Unknown stop color '$1'"
+   if [ ! -z $BABTIN_COLORS ]; then
+      if [ "$color" == "red" ]; then
+         echo "\e[00m"
+      elif [ "$color" == "green" ]; then
+         echo -e "\e[39m"
+      else
+         io-exception "Unknown stop color '$1'"
+      fi
    fi
 }
 
