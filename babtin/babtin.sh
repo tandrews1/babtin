@@ -208,7 +208,7 @@ do-summary () {
    fi
    #ls -ltrh $FAIL_DIR
    echo -en "`io-color-start green`$BABTIN_TEST_PASS pass streak ($time)`io-color-stop green` | "
-   if [ $BABTIN_TEST_FAIL -gt 0 ]; then
+   if [ ! -z $BABTIN_TEST_FAIL ]; then
       echo -en "`io-color-start red`"
       echo -en "$BABTIN_TEST_FAIL fail(s)"
       echo -e "`io-color-stop red`"
@@ -476,7 +476,7 @@ main () {
       fi
    done
 
-   if [ $BABTIN_TEST_FAIL -gt 0 ]; then
+   if [ ! -z $BABTIN_TEST_FAIL ]; then
       echo "Babtin: I found at least one test failed..."
       do-summary
       exit 1
