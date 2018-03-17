@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.8.1
+VERSION=0.8.2
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Files for syncing state to disk for eventual sharing between processes
@@ -21,172 +21,8 @@ FAIL_DIR=$SCRIPT_DIR/tracker/fails
 RUNNING_DIR=$SCRIPT_DIR/tracker/running/pid.$$/
 SELFTEST=0
 
-#
-# io-color-start -- 
-#
-#    Echo codes to make colors.
-#
-io-color-start () {
-   local color=$1
-   if [ "$color" == "red" ]; then
-      echo "\e[00;31m"
-   elif [ "$color" == "green" ]; then
-      echo -e "\e[32m"
-   else
-      io-exception "Unknown color '$1'"
-   fi
-}
-
-#
-# io-color-stop --
-#
-#    Echo stop color codes.
-#
-io-color-stop () {
-   local color=$1
-   if [ "$color" == "red" ]; then
-      echo "\e[00m"
-   elif [ "$color" == "green" ]; then
-      echo -e "\e[39m"
-   else
-      io-exception "Unknown stop color '$1'"
-   fi
-}
-
-#
-# io-exception --
-#
-#    Show something bad happened. Encourage user to terminate execution.
-#
-io-exception () {
-   local msg=$1
-   local hint=$2
-   if [ "`uname`" != "Darwin" ]; then
-      echo -e "`io-color-start red`EXCEPTION:`io-color-stop red` $msg ($hint)"
-      echo -e "Press ctrl-c to break, or else to continue (not recommended)."
-   else
-      echo -e "EXCEPTION: $msg $hint"
-      echo -e "Press ctrl-c to break, or else to continue (not recommened)."
-   fi
-   # pause
-   read -p ""
-}
-
-#
-# assert-integer --
-#
-#    Assert that a given value is a positive integer value.
-#
-#    usage: 'assert-integer $FUNCNAME $LINENO <val>'
-#       ex: 'assert-integer $FUNCNAME $LINENO <val>'
-assert-integer () {
-   local func="$1"
-   local line="$2"
-   local val="$3"
-   if ! [[ "$val" =~ ^[0-9]+$ ]] ; then
-      io-exception "$func:$line val '$val' is not an integer and it should be!"
-   fi
-}
-
-# 
-# assert-zero --
-#
-#    Expect a zero value otherwise execption.
-#
-assert-zero () {
-   local function="$1"
-   local lineno="$2" 
-   local val="$3"
-   local msg="$4"
-   if [ "$val" != "0" ]; then
-      io-exception "assert-not-zero@$function:$lineno:" "$msg"
-   fi
-}
-
-#
-#  assert-file --
-#
-#    Assert that a given file exists.
-#
-#    usage: 'assert-file $FUNCNAME $LINENO <file> <hint>'
-#       ex: 'assert-file $FUNCNAME $LINENO <file> <hint>'
-#
-assert-file () {
-   local func="$1"
-   local line="$2"
-   local file="$3"
-   local hint="$4"
-   if [ "$func" == "" ]; then
-      io-exception "assert-file: (Arg1 is blank)" "$hint"
-   fi
-   if [ "$line" == "" ]; then
-      io-exception "$func:$line assert-file: (Arg2 is blank)" "$hint"
-   fi
-   if [ "$file" == "" ]; then
-      io-exception "$func:$line: assert-file: (Arg3 is blank)" "$hint"
-   fi
-   if [ "$hint" == "" ]; then
-      io-exception "$func:$line: assert-file: (Arg4 is blank)"
-   fi
-   if [ ! -f "$file" ] ; then
-      io-exception "$func:$line: assert-file FAIL:" "$hint"
-   fi
-}
-
-#
-# assert-not-empty -- 
-#
-#    Expect a non-empty value otherwise exception.
-#    usage: 'assert-not-empty <$FUNCTION> <$LINENO> <val> [<msg>]'
-#
-assert-not-empty () {
-   local function="$1"
-   local lineno="$2"
-   local val="$3"
-   local msg="$4"
-   if [ "$val" == "" ]; then
-      io-exception "assert-not-empty@$function:$lineno:" "$msg"
-   fi
-}
-
-#
-# time-seconds-to-human --
-#
-#    Convert seconds to a human readable string describing the duration.
-#
-#    Based on http://stackoverflow.com/questions/12199631/
-#                convert-seconds-to-hours-minutes-seconds
-#
-#    usage: 'time-seconds-to-human <seconds>'
-#       ex: 'time-seconds-to-human 124567'
-#
-time-seconds-to-human () {
-    num=$1
-    min=0
-    hour=0
-    day=0
-    if((num>59));then
-        ((sec=num%60))
-        ((num=num/60))
-        if((num>59));then
-            ((min=num%60))
-            ((num=num/60))
-            if((num>23));then
-                ((hour=num%24))
-                ((day=num/24))
-            else
-                ((hour=num))
-            fi
-        else
-            ((min=num))
-        fi
-    else
-        ((sec=num))
-    fi
-    echo "$day"d "$hour"h "$min"m "$sec"s
-}
-
-
+# In iterative mode, the number of iterations left.
+let ITERATIONS=0
 
 #
 # get-test-log --
@@ -327,7 +163,7 @@ do-final-cleanup () {
 
 do-exit () {
    echo ""
-   do-final-cleanup && echo echo "Exiting..." && exit 0 
+   do-final-cleanup && echo "Exiting..." && exit 0 
    # If remove failed exit with non-zero status.
    exit 1
 }
@@ -510,8 +346,7 @@ tester-test-cmd () {
    assert-not-empty "$FUNCNAME" "$LINENO" "$cmd" "arg2 empty"
    local logfile="`get-test-log $name`"
    local time_fmt_str="babtintime:real %E\nbabtintime:user %U\nbabtintime:sys %S"
-   printf "[iter:%s] (%16s) %s: " "$ITERATIONS" \
-      "`time-seconds-to-human $SECONDS`" "$name"
+   printf "(%16s) %s: " "`time-seconds-to-human $SECONDS`" "$name"
    echo "$cmd" >> $logfile
    (/usr/bin/time -f "$time_fmt_str" $cmd) &> $logfile
    cmd_exit=$?
@@ -555,10 +390,11 @@ init-tracker () {
 }
 
 main () {
+   local ITERATIONS=0
    if [ "$1" == "--selftest" ]; then
       export SELFTEST=1
    elif [ "$1" == "--iters" -o "$1" == "--iter" ]; then
-      export ITERATIONS=$2
+      ITERATIONS=$2
    fi
    shopt -s nullglob
  
@@ -631,9 +467,10 @@ main () {
          # If they dare to change running test code,
          # try and helpfully start running it on next iteration...
          . $SCRIPT_DIR/sandbox.sh
-         tester-next-test $*
+         printf "[iter:%s] " "$iters"
+         tester-next-test $* 
          if [ ! -z $ITERATIONS ]; then
-            assert-integer "$FUNCNAME" "$LINENO" "$ITERATIONS" "ITERATIONS"
+            assert-integer "$FUNCNAME" "$LINENO" "$iters" "ITERATIONS"
             iters=$((iters-1))
          fi
       fi
@@ -650,4 +487,5 @@ main () {
 }
 
 # Run!
+source $SCRIPT_DIR/lib.sh
 main $*
