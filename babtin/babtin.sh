@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.7.9
+VERSION=0.8.1
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Files for syncing state to disk for eventual sharing between processes
@@ -236,9 +236,9 @@ do-title () {
       do-graphic
    fi
    echo "`io-color-stop green`"
-   dump-env
-   echo "Ctrl-C to pause and babtin cmd prompt"
+   echo "Ctrl-C to pause for babtin cmd prompt"
    echo ""
+   dump-env
 }
 
 dump-debug-env () {
@@ -256,10 +256,12 @@ dump-env () {
    echo "BABTIN_1ST_DICE    roll <=$BABTIN_1ST_DICE/6"
    echo "Sandbox --------------------------------------"
    echo "TODO"
-   echo "Debug   --------------------------------------"
-   dump-debug-env
    echo "Tester Summary -------------------------------"
    tester-summary
+   if [ ! -z $BABTIN_DEBUG ]; then
+      echo "Debug   --------------------------------------"
+      dump-debug-env
+   fi
 }
 
 # Sync state to disk from env.
@@ -372,12 +374,10 @@ do-summary () {
    echo -en "`io-color-start green`$BABTIN_TEST_PASS pass streak ($time)`io-color-stop green` | "
    if [ $BABTIN_TEST_FAIL -gt 0 ]; then
       echo -en "`io-color-start red`"
-   fi 
-   echo -en "$BABTIN_TEST_FAIL fail(s)"
-   if [ $BABTIN_TEST_FAIL -gt 0 ]; then
+      echo -en "$BABTIN_TEST_FAIL fail(s)"
       echo -e "`io-color-stop red`"
    else 
-      echo ""
+      echo "No failures yet!"
    fi
    dump-env
 }
@@ -557,12 +557,8 @@ init-tracker () {
 main () {
    if [ "$1" == "--selftest" ]; then
       export SELFTEST=1
-   elif [ "$1" == "--iters" ]; then
+   elif [ "$1" == "--iters" -o "$1" == "--iter" ]; then
       export ITERATIONS=$2
-   fi
-   if [ "$ITERATIONS" == "" ]; then
-      echo "--iters not specified; using --iters inf for continuous testing"
-      export ITERATIONS=inf
    fi
    shopt -s nullglob
  
@@ -618,15 +614,16 @@ main () {
 
    # Begin testing.
    do-title
+   local iters=$ITERATIONS
    while :
    do
       # Practice with Squire tester tester.
       if [ $SELFTEST == 1 ]; then
          test-squire
       else
-         if [ "$ITERATIONS" != "inf" ]; then
-            assert-integer "$FUNCNAME" "$LINENO" "$ITERATIONS" "ITERATIONS"
-            if [ $ITERATIONS -eq 0 ]; then
+         if [ ! -z $ITERATIONS ]; then
+            assert-integer "$FUNCNAME" "$LINENO" "$iters" "iters"
+            if [ $iters -eq 0 ]; then
                # End testing
                break
             fi
@@ -635,16 +632,16 @@ main () {
          # try and helpfully start running it on next iteration...
          . $SCRIPT_DIR/sandbox.sh
          tester-next-test $*
-         if [ "$ITERATIONS" != "inf" ]; then
+         if [ ! -z $ITERATIONS ]; then
             assert-integer "$FUNCNAME" "$LINENO" "$ITERATIONS" "ITERATIONS"
-            export ITERATIONS=$((ITERATIONS-1))
+            iters=$((iters-1))
          fi
       fi
    done
 
-   do-summary
    if [ $BABTIN_TEST_FAIL -gt 0 ]; then
       echo "Babtin: I found at least one test failed..."
+      do-summary
       exit 1
    else
       echo "Babtin: PASSED A BARRAGE OF TESTS!"
