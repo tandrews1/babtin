@@ -232,7 +232,7 @@ do-graphic () {
 do-title () {
    echo ""
    echo "`io-color-start green`B.a.b.t.i.n. v$VERSION "
-   if [ ! -z $ITERATIONS ]; then
+   if [ -z $ITERATIONS ]; then
       do-graphic
    fi
    echo "`io-color-stop green`"
