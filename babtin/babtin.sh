@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.7.8
+VERSION=0.7.9
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Files for syncing state to disk for eventual sharing between processes
@@ -232,20 +232,34 @@ do-graphic () {
 do-title () {
    echo ""
    echo "`io-color-start green`B.a.b.t.i.n. v$VERSION "
-   do-graphic
+   if [ ! -z $ITERATIONS ]; then
+      do-graphic
+   fi
    echo "`io-color-stop green`"
-   echo "SELFTEST                 =$SELFTEST"
-   echo "WORKING_DIR              =$WORKING_DIR"
-   echo "BABTIN_1ST_DICE    roll <=$BABTIN_1ST_DICE/6"
+   dump-env
    echo "Ctrl-C to pause and babtin cmd prompt"
    echo ""
 }
 
+dump-debug-env () {
+   echo "BABTIN_TEST_PASS         =$BABTIN_TEST_PASS"
+   echo "BABTIN_TEST_FAIL         =$BABTIN_TEST_FAIL"
+   echo "BABTIN_1ST_DICE          =$BABTIN_1ST_DICE"
+   echo "SIGINT_SKIP              =$SIGINT_SKIP"
+}
+
 dump-env () {
-   echo "BABTIN_TEST_PASS=$BABTIN_TEST_PASS"
-   echo "BABTIN_TEST_FAIL=$BABTIN_TEST_FAIL"
-   echo "BABTIN_1ST_DICE=$BABTIN_1ST_DICE"
-   echo "SIGINT_SKIP=$SIGINT_SKIP"
+   echo "Babtin ---------------------------------------"
+   echo "ITERATIONS               =$ITERATIONS"
+   echo "SELFTEST                 =$SELFTEST"
+   echo "WORKING_DIR              =$WORKING_DIR"
+   echo "BABTIN_1ST_DICE    roll <=$BABTIN_1ST_DICE/6"
+   echo "Sandbox --------------------------------------"
+   echo "TODO"
+   echo "Debug   --------------------------------------"
+   dump-debug-env
+   echo "Tester Summary -------------------------------"
+   tester-summary
 }
 
 # Sync state to disk from env.
@@ -365,8 +379,7 @@ do-summary () {
    else 
       echo ""
    fi
-   echo "WORKING_DIR=$WORKING_DIR"
-   tester-summary
+   dump-env
 }
 
 #
