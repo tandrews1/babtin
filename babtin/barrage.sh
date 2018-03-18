@@ -17,7 +17,7 @@ main () {
    pushd "`pwd`" > /dev/null
    barrage-cd-repo
    local last_git_commit="`git log |head -1 |sed s/commit\ //`"
-   local git_branch="`git branch |grep \* |sed s/\*\ //`"
+   local git_branch="`git branch |grep \* |sed s/\*\ // |sed s/[^a-zA-Z0-9]/_/g`"
    assert-not-empty "$FUNCNAME" "$LINENO" "$last_git_commit" 
    assert-not-empty "$FUNCNAME" "$LINENO" "$git_branch"
    popd > /dev/null
