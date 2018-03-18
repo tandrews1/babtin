@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.9.3
+VERSION=0.9.4
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Files for syncing state to disk for eventual sharing between processes

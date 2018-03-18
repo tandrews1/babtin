@@ -7,6 +7,8 @@
 #
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+BABTIN_KILL_SWITCH=/tmp/BABTIN_DIE
+
 main () {
    local width=$1
    local depth=$2
@@ -32,6 +34,9 @@ main () {
    i=0
    export SECONDS=`pwd`
    export BABTIN_FAIL_DIR=$outdir
+   if [ -f $BABTIN_KILL_SWITCH ]; then
+      rm $BABTIN_KILL_SWITCH
+   fi
    while [ $i -lt $width ]
    do
       echo "$i STARTING"
