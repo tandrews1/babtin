@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.8.2
+VERSION=0.9.2
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Files for syncing state to disk for eventual sharing between processes
@@ -17,7 +17,6 @@ WORKING_TOTAL_PASS_FILE=/tmp/babtin.$$/status/total_pass
 WORKING_TOTAL_FAIL_FILE=/tmp/babtin.$$/status/total_fail
 WORKING_DICE_1_FILE=/tmp/babtin.$$/control/first_dice
 WORKING_SIGINT_FILE=/tmp/babtin.$$/control/sigint
-FAIL_DIR=$SCRIPT_DIR/tracker/fails
 RUNNING_DIR=$SCRIPT_DIR/tracker/running/pid.$$/
 SELFTEST=0
 
@@ -105,59 +104,63 @@ dump-env () {
 #       workaround is noticing test has not moved in some time, killing tester
 #       and looking at the output in the tracker's running directory.
 do-env-export () {
-   #TODO wait on .lck file
-   #TODO acquire .lck file
-   local passes_file="$WORKING_TOTAL_PASS_FILE"
-   local fails_file="$WORKING_TOTAL_FAIL_FILE"
-   local die_1_file="$WORKING_DICE_1_FILE"
-   local sigint_file="$WORKING_SIGINT_FILE"
-   assert-file "$FUNCNAME" "$LINENO" "$passes_file" "pass file not found"
-   assert-file "$FUNCNAME" "$LINENO" "$fails_file" "fail file not found"
-   assert-file "$FUNCNAME" "$LINENO" "$die_1_file" "fail file not found"
-   assert-file "$FUNCNAME" "$LINENO" "$sigint_file" "sigint file not found"
-   assert-not-empty "$FUNCNAME" "$LINENO" "$BABTIN_TEST_PASS" "passes empty"
-   assert-not-empty "$FUNCNAME" "$LINENO" "$BABTIN_TEST_FAIL" "fails empty"
-   assert-not-empty "$FUNCNAME" "$LINENO" "$BABTIN_1ST_DICE" "die empty"
-   assert-not-empty "$FUNCNAME" "$LINENO" "$SIGINT_SKIP" "sigint empty"
-   #TODO release .lck file
-   echo $BABTIN_TEST_PASS > $passes_file   && \
-      echo $BABTIN_TEST_FAIL > $fails_file && \
-      echo $BABTIN_1ST_DICE > $die_1_file     && \
-      echo $SIGINT_SKIP > $sigint_file 
-   assert-zero "$FUNCNAME" "$LINENO" "$?" "save failed"
+   if [ -z $ITERATIONS ]; then
+      #TODO wait on .lck file
+      #TODO acquire .lck file
+      local passes_file="$WORKING_TOTAL_PASS_FILE"
+      local fails_file="$WORKING_TOTAL_FAIL_FILE"
+      local die_1_file="$WORKING_DICE_1_FILE"
+      local sigint_file="$WORKING_SIGINT_FILE"
+      assert-file "$FUNCNAME" "$LINENO" "$passes_file" "pass file not found"
+      assert-file "$FUNCNAME" "$LINENO" "$fails_file" "fail file not found"
+      assert-file "$FUNCNAME" "$LINENO" "$die_1_file" "fail file not found"
+      assert-file "$FUNCNAME" "$LINENO" "$sigint_file" "sigint file not found"
+      assert-not-empty "$FUNCNAME" "$LINENO" "$BABTIN_TEST_PASS" "passes empty"
+      assert-not-empty "$FUNCNAME" "$LINENO" "$BABTIN_TEST_FAIL" "fails empty"
+      assert-not-empty "$FUNCNAME" "$LINENO" "$BABTIN_1ST_DICE" "die empty"
+      assert-not-empty "$FUNCNAME" "$LINENO" "$SIGINT_SKIP" "sigint empty"
+      #TODO release .lck file
+      echo $BABTIN_TEST_PASS > $passes_file   && \
+         echo $BABTIN_TEST_FAIL > $fails_file && \
+         echo $BABTIN_1ST_DICE > $die_1_file     && \
+         echo $SIGINT_SKIP > $sigint_file 
+      assert-zero "$FUNCNAME" "$LINENO" "$?" "save failed"
+   fi
 }
 
 # Sync state from disk into env.
 do-env-import () {
-   #TODO wait on a .lck file
-   #TODO acquire a .lck file
-   local passes_file="$WORKING_TOTAL_PASS_FILE"
-   local fails_file="$WORKING_TOTAL_FAIL_FILE"
-   local die_1_file="$WORKING_DICE_1_FILE"
-   local sigint_file="$WORKING_SIGINT_FILE"
-   assert-file "$FUNCNAME" "$LINENO" "$passes_file" "pass file not found"
-   assert-file "$FUNCNAME" "$LINENO" "$fails_file" "fail file not found"
-   assert-file "$FUNCNAME" "$LINENO" "$die_1_file" "die 1 file not found"
-   assert-file "$FUNCNAME" "$LINENO" "$sigint_file" "sigint file not found"
-   local passes="`cat $passes_file`"
-   local fails="`cat $fails_file`"
-   local first_dice="`cat $die_1_file`"
-   local sigint_status="`cat $sigint_file`"
-   #TODO release .lck file
-   assert-integer "$FUNCNAME" "$LINENO" "$passes" "passes not int"
-   assert-integer "$FUNCNAME" "$LINENO" "$fails" "fails not int"
-   assert-integer "$FUNCNAME" "$LINENO" "$first_dice" "die 1 not int"
-   export BABTIN_TEST_PASS=$passes   && \
-      export BABTIN_TEST_FAIL=$fails && \
-      export BABTIN_1ST_DICE=$first_dice && \
-      export SIGINT_SKIP=$sigint_status
-   assert-zero "$FUNCNAME" "$LINENO" "$?" "import failed"
+   if [ -z $ITERATIONS ]; then
+      #TODO wait on a .lck file
+      #TODO acquire a .lck file
+      local passes_file="$WORKING_TOTAL_PASS_FILE"
+      local fails_file="$WORKING_TOTAL_FAIL_FILE"
+      local die_1_file="$WORKING_DICE_1_FILE"
+      local sigint_file="$WORKING_SIGINT_FILE"
+      assert-file "$FUNCNAME" "$LINENO" "$passes_file" "pass file not found"
+      assert-file "$FUNCNAME" "$LINENO" "$fails_file" "fail file not found"
+      assert-file "$FUNCNAME" "$LINENO" "$die_1_file" "die 1 file not found"
+      assert-file "$FUNCNAME" "$LINENO" "$sigint_file" "sigint file not found"
+      local passes="`cat $passes_file`"
+      local fails="`cat $fails_file`"
+      local first_dice="`cat $die_1_file`"
+      local sigint_status="`cat $sigint_file`"
+      #TODO release .lck file
+      assert-integer "$FUNCNAME" "$LINENO" "$passes" "passes not int"
+      assert-integer "$FUNCNAME" "$LINENO" "$fails" "fails not int"
+      assert-integer "$FUNCNAME" "$LINENO" "$first_dice" "die 1 not int"
+      export BABTIN_TEST_PASS=$passes   && \
+         export BABTIN_TEST_FAIL=$fails && \
+         export BABTIN_1ST_DICE=$first_dice && \
+         export SIGINT_SKIP=$sigint_status
+      assert-zero "$FUNCNAME" "$LINENO" "$?" "import failed"
+   fi
 }
 
 do-final-cleanup () {
-   echo "Any in-progress test output left at $RUNNING_DIR"
    echo "Cleaning up..."
    # Kind of hacky but saves some lines...
+   rm -r $RUNNING_DIR
    rm -r $WORKING_DIR 
 }
 
@@ -204,9 +207,9 @@ do-summary () {
    do-env-import
    if [ "`which tree`" != "" ]; then
       echo ""
-      tree -ChDdt  $FAIL_DIR
+      tree -ChDdt  $BABTIN_FAIL_DIR
    fi
-   #ls -ltrh $FAIL_DIR
+   #ls -ltrh $BABTIN_FAIL_DIR
    echo -en "`io-color-start green`$BABTIN_TEST_PASS pass streak ($time)`io-color-stop green` | "
    if [ ! -z $BABTIN_TEST_FAIL ]; then
       echo -en "`io-color-start red`"
@@ -305,20 +308,20 @@ test-fail () {
       local summary_safe="`basename $summary`"
    fi
    if [ "$summary" != "" ]; then
-      if [ ! -d "$FAIL_DIR/$summary" ]; then
+      if [ ! -d "$BABTIN_FAIL_DIR/$summary" ]; then
          echo -e "`io-color-start red`NEW BUG: $summary`io-color-stop red`"
-         mkdir -p "$FAIL_DIR/$summary"
+         mkdir -p "$BABTIN_FAIL_DIR/$summary"
       else 
          echo "It's another $summary"
       fi
-      mv $logfile "$FAIL_DIR/$summary"
+      mv $logfile "$BABTIN_FAIL_DIR/$summary"
    else
       echo "Could not auto-triage failure :("
-      mkdir -p "$FAIL_DIR/unknown"
-      mv $logfile "$FAIL_DIR/unknown"
+      mkdir -p "$BABTIN_FAIL_DIR/unknown"
+      mv $logfile "$BABTIN_FAIL_DIR/unknown"
    fi
    do-env-import
-   export BABTIN_TEST_FAIL=$((BABTIN_TEST_FAIL+1))
+   export BABTIN_TEST_FAIL=1
    # Start the passing streak over...
    export BABTIN_TEST_PASS=0
    export SECONDS=0
@@ -346,23 +349,25 @@ tester-test-cmd () {
    assert-not-empty "$FUNCNAME" "$LINENO" "$cmd" "arg2 empty"
    local logfile="`get-test-log $name`"
    local time_fmt_str="babtintime:real %E\nbabtintime:user %U\nbabtintime:sys %S"
-   printf "(%16s) %s: " "`time-seconds-to-human $SECONDS`" "$name"
    echo "$cmd" >> $logfile
    (/usr/bin/time -f "$time_fmt_str" $cmd) &> $logfile
    cmd_exit=$?
-   # If we handled a sigint and returned, then just abort the current test...
-   if [ $cmd_exit != 0 ]; then
-      do-env-import
-      assert-integer "$FUNCNAME" "$LINENO" "$SIGINT_SKIP" \
-         "SIGINT skip not synced right"
-      if [ $SIGINT_SKIP == 1 ]; then
-         trap handle-sigint SIGINT
-         export SIGINT_SKIP=0
-         do-env-export
-         echo "Starting a new test..."
-         return 130
+   printf "(%16s) %s: " "`time-seconds-to-human $SECONDS`" "$name"
+   if [ -z $ITERATIONS ]; then
+      # If we handled a sigint and returned, then just abort the current test...
+      if [ $cmd_exit != 0 ]; then
+         do-env-import
+         assert-integer "$FUNCNAME" "$LINENO" "$SIGINT_SKIP" \
+            "SIGINT skip not synced right"
+         if [ $SIGINT_SKIP == 1 ]; then
+            trap handle-sigint SIGINT
+            export SIGINT_SKIP=0
+            do-env-export
+            echo "Starting a new test..."
+            return 130
+         fi
+         #test-fail "$logfile"
       fi
-      #test-fail "$logfile"
    fi
       
    # Although it looks like it passed, we need to let the sandbox function have
@@ -381,7 +386,7 @@ test-squire () {
 }
 
 init-tracker () {
-   mkdir -p $FAIL_DIR
+   mkdir -p $BABTIN_FAIL_DIR
    mkdir -p $RUNNING_DIR 
    # Not really used anywhere in script... yet.
    # If used anywhere else, pull into a global.
@@ -401,20 +406,27 @@ main () {
    # Create bug tracking structure
    init-tracker
 
+   if [ -z $BABTIN_FAIL_DIR ]; then
+      export BABTIN_FAIL_DIR=$SCRIPT_DIR/tracker/fails
+      echo "Using default tracker/fails for failures"
+   else
+      echo "Using $BABTIN_FAIL_DIR for failures"
+   fi
+
    # Triage mode...
    if [ "$1" == "--triage" ]; then
       echo "Triaging fails directory..."
       pushd "`pwd`" > /dev/null
-      cd $FAIL_DIR
+      cd $BABTIN_FAIL_DIR
       for f in ./*
       do
          if [ -f "$f" ]; then
             local summary="`bug-summary-from-log $f`"
             echo "Triaging an occurance of $summary"
             if [ "$summary" != "" ]; then
-               mkdir -p $FAIL_DIR/$summary
-               mv $FAIL_DIR/$f \
-                  $FAIL_DIR/$summary/
+               mkdir -p $BABTIN_FAIL_DIR/$summary
+               mv $BABTIN_FAIL_DIR/$f \
+                  $BABTIN_FAIL_DIR/$summary/
             fi
          else 
             echo "$f is not a file"
@@ -455,6 +467,7 @@ main () {
    do
       # Practice with Squire tester tester.
       if [ $SELFTEST == 1 ]; then
+         export BABTIN_FAIL_DIR=$SCRIPT_DIR/tracker/fails/_babtin_selftest
          test-squire
       else
          if [ ! -z $ITERATIONS ]; then
@@ -477,7 +490,7 @@ main () {
    done
 
    if [ ! -z $BABTIN_TEST_FAIL ]; then
-      echo "Babtin: I found at least one test failed..."
+      echo "Babtin: I heard at least one test failed..."
       do-summary
       exit 1
    else

@@ -10,7 +10,11 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 main () {
    local width=$1
    local depth=$2
-   local outdir="$SCRIPT_DIR/tracker/barrage/barrage.$$"
+   local last_git_commit="`git log |head -1 |sed s/commit\ //`"
+   local git_branch="`git branch |grep \* |sed s/\*\ //`"
+   assert-not-empty "$FUNCNAME" "$LINENO" "$last_git_commit" 
+   assert-not-empty "$FUNCNAME" "$LINENO" "$git_branch"
+   local outdir="$SCRIPT_DIR/tracker/running/barrage/$last_git_commit-$git_branch-$GO_TEST_PKG-$width-$depth.$$"
    local log="$outdir/$i.log"
    assert-not-empty "$width" "$FUNCNAME" "$LINENO" "arg1 width"
    assert-not-empty "$width" "$FUNCNAME" "$LINENO" "arg2 depth"
@@ -27,6 +31,7 @@ main () {
    echo ""
    i=0
    export SECONDS=`pwd`
+   export BABTIN_FAIL_DIR=$outdir
    while [ $i -lt $width ]
    do
       echo "$i STARTING"
