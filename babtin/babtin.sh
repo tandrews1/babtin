@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.9.2
+VERSION=0.9.3
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Files for syncing state to disk for eventual sharing between processes
@@ -465,6 +465,10 @@ main () {
    local iters=$ITERATIONS
    while :
    do
+      if [ -f /tmp/BABTIN_DIE ]; then
+         echo "Exiting"
+         return
+      fi
       # Practice with Squire tester tester.
       if [ $SELFTEST == 1 ]; then
          export BABTIN_FAIL_DIR=$SCRIPT_DIR/tracker/fails/_babtin_selftest
