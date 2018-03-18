@@ -61,6 +61,15 @@ golab-test-with-dice-races () {
 # Babtin test stubs (these are required and hooked into by test framework)
 # =============================================================================
 
+# 
+# barrage-cd-repo --
+#
+# Let Barrage cd to the repository under test.
+#
+barrage-cd-repo () {
+   cd $GO_TEST_SRC
+}
+
 #
 # tester-get-bug-from-log --
 #

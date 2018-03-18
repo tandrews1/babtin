@@ -12,10 +12,15 @@ BABTIN_KILL_SWITCH=/tmp/BABTIN_DIE
 main () {
    local width=$1
    local depth=$2
+   assert-not-empty "$FUNCNAME" "$LINENO" "$width" "arg1 width"
+   assert-not-empty "$FUNCNAME" "$LINENO" "$depth" "arg2 depth"
+   pushd "`pwd`" > /dev/null
+   barrage-cd-repo
    local last_git_commit="`git log |head -1 |sed s/commit\ //`"
    local git_branch="`git branch |grep \* |sed s/\*\ //`"
    assert-not-empty "$FUNCNAME" "$LINENO" "$last_git_commit" 
    assert-not-empty "$FUNCNAME" "$LINENO" "$git_branch"
+   popd > /dev/null
    local outdir="$SCRIPT_DIR/tracker/running/barrage/$last_git_commit-$git_branch-$GO_TEST_PKG-$width-$depth.$$"
    local log="$outdir/$i.log"
    assert-not-empty "$width" "$FUNCNAME" "$LINENO" "arg1 width"
@@ -59,4 +64,5 @@ main () {
 
 # Run!
 . $SCRIPT_DIR/lib.sh
+. $SCRIPT_DIR/sandbox.sh
 main $*
