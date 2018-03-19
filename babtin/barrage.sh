@@ -14,9 +14,9 @@ main () {
    local depth=$2
    assert-not-empty "$FUNCNAME" "$LINENO" "$width" "arg1 width"
    assert-not-empty "$FUNCNAME" "$LINENO" "$depth" "arg2 depth"
-   local barrage_name="`barrage-get-name`"
+   local barrage_name="`barrage-get-name`-$width-X-$depth-barrage"
    assert-not-empty "$FUNCNAME" "$LINENO" "$barrage_name" "sandbox barrage-get-name returned nothing"
-   local outdir="$SCRIPT_DIR/tracker/running/barrage/$barrage_name-at-$width-by-$depth.$$"
+   local outdir="$SCRIPT_DIR/tracker/running/barrage/$barrage_name.$$"
    local log="$outdir/$i.log"
    assert-not-empty "$width" "$FUNCNAME" "$LINENO" "arg1 width"
    assert-not-empty "$width" "$FUNCNAME" "$LINENO" "arg2 depth"
@@ -52,7 +52,7 @@ main () {
    else
       grep "FAIL" ./*
       if [ $? == 1 ]; then
-         echo "$width X $depth $GO_TEST_PKG - ALL PASS"
+         echo "$barrage_name - BARRAGE TESTING FULL PASS"
          rm -r $outdir
       else
          mv $outdir $SCRIPT_DIR/tracker/fails
