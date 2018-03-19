@@ -74,7 +74,11 @@ barrage-get-name () {
    assert-not-empty "$FUNCNAME" "$LINENO" "$last_git_commit" 
    assert-not-empty "$FUNCNAME" "$LINENO" "$git_branch"
    popd > /dev/null
-   echo $last_git_commit-$git_branch-$GO_TEST_PKG-$THA_GO_DEBUG-$THA_GO_STATS.$$
+   if [ ! -z $THA_GO_DEBUG ]; then
+      echo $last_git_commit-$git_branch-$GO_TEST_PKG-$THA_GO_DEBUG-$THA_GO_STATS.$$
+   else
+      echo $last_git_commit-$git_branch-$GO_TEST_PKG-release-.$$
+   fi
 }
 
 #
