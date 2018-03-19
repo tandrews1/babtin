@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.9.4
+VERSION=0.9.6
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Files for syncing state to disk for eventual sharing between processes
@@ -402,9 +402,6 @@ main () {
       ITERATIONS=$2
    fi
    shopt -s nullglob
- 
-   # Create bug tracking structure
-   init-tracker
 
    if [ -z $BABTIN_FAIL_DIR ]; then
       export BABTIN_FAIL_DIR=$SCRIPT_DIR/tracker/fails
@@ -436,6 +433,9 @@ main () {
       return 0
    fi
 
+   # Create bug tracking structure
+   init-tracker
+
    # Tree is kind of required.
    if [ "`which tree`" == "" ]; then
       echo "NOTE: Please install tree for a better experience!"
@@ -466,7 +466,7 @@ main () {
    while :
    do
       if [ -f /tmp/BABTIN_DIE ]; then
-         echo "Exiting"
+         echo "Exiting due to /tmp/BABTIN_DIE flag set"
          return
       fi
       # Practice with Squire tester tester.

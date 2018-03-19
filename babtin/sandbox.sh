@@ -62,12 +62,19 @@ golab-test-with-dice-races () {
 # =============================================================================
 
 # 
-# barrage-cd-repo --
+# barrage-get-name --
 #
-# Let Barrage cd to the repository under test.
+# Get the custom name for this barrage
 #
-barrage-cd-repo () {
+barrage-get-name () {
+   pushd "`pwd`" > /dev/null
    cd $GO_TEST_SRC
+   local last_git_commit="`git log |head -1 |sed s/commit\ //`"
+   local git_branch="`git branch |grep \* |sed s/\*\ // |sed s/[^a-zA-Z0-9]/_/g`"
+   assert-not-empty "$FUNCNAME" "$LINENO" "$last_git_commit" 
+   assert-not-empty "$FUNCNAME" "$LINENO" "$git_branch"
+   popd > /dev/null
+   echo $last_git_commit-$git_branch-$GO_TEST_PKG-$THA_GO_DEBUG-$THA_GO_STATS.$$
 }
 
 #
@@ -112,6 +119,7 @@ tester-get-bug-from-log () {
 #
 tester-summary () {
    echo "THA_GO_DEBUG=$THA_GO_DEBUG"
+   echo "THA_GO_STATS=$THA_GO_STATS"
    echo "GOPATH=$GOPATH"
    echo "RACE_FLAG_DICE_VAL=$BABTIN_1ST_DICE"
    echo "GO_TEST_PKG=$GO_TEST_PKG"

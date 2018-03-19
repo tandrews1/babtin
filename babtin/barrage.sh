@@ -14,14 +14,9 @@ main () {
    local depth=$2
    assert-not-empty "$FUNCNAME" "$LINENO" "$width" "arg1 width"
    assert-not-empty "$FUNCNAME" "$LINENO" "$depth" "arg2 depth"
-   pushd "`pwd`" > /dev/null
-   barrage-cd-repo
-   local last_git_commit="`git log |head -1 |sed s/commit\ //`"
-   local git_branch="`git branch |grep \* |sed s/\*\ // |sed s/[^a-zA-Z0-9]/_/g`"
-   assert-not-empty "$FUNCNAME" "$LINENO" "$last_git_commit" 
-   assert-not-empty "$FUNCNAME" "$LINENO" "$git_branch"
-   popd > /dev/null
-   local outdir="$SCRIPT_DIR/tracker/running/barrage/$last_git_commit-$git_branch-$GO_TEST_PKG-$width-$depth.$$"
+   local barrage_name="`barrage-get-name`"
+   assert-not-empty "$FUNCNAME" "$LINENO" "$barrage_name" "sandbox barrage-get-name returned nothing"
+   local outdir="$SCRIPT_DIR/tracker/running/barrage/$barrage_name-at-$width-by-$depth.$$"
    local log="$outdir/$i.log"
    assert-not-empty "$width" "$FUNCNAME" "$LINENO" "arg1 width"
    assert-not-empty "$width" "$FUNCNAME" "$LINENO" "arg2 depth"
@@ -57,6 +52,7 @@ main () {
       rm -r $outdir
    else
       mv $outdir $SCRIPT_DIR/tracker/fails
+      tree -D $SCRIPT_DIR/tracker/fails
    fi
    local total_sec=$SECONDS
    time-seconds-to-human $total_sec
