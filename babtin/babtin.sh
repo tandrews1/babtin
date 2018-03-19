@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.9.6
+VERSION=0.9.7.0
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Files for syncing state to disk for eventual sharing between processes
@@ -159,15 +159,13 @@ do-env-import () {
 
 do-final-cleanup () {
    echo "Cleaning up..."
-   # Kind of hacky but saves some lines...
-   rm -r $RUNNING_DIR
-   rm -r $WORKING_DIR 
+   rm -r $RUNNING_DIR && rm -r $WORKING_DIR 
 }
 
 do-exit () {
    echo ""
+   # Saves some lines; exit 0 if cleanup succeeds, else exit 1
    do-final-cleanup && echo "Exiting..." && exit 0 
-   # If remove failed exit with non-zero status.
    exit 1
 }
 
@@ -338,8 +336,6 @@ test-pass () {
    #TODO there will be an option to preserve passing logs eventually
    # if [ ! -z PRESERVE_PASSING_LOGS ]; then ...
    rm $logfile
-   #TODO remove running dir so clean runs don't leave dirs behind
-   #rm -r $RUNNING_DIR
 }
 
 tester-test-cmd () {
@@ -499,7 +495,7 @@ main () {
       exit 1
    else
       echo "Babtin: PASSED A BARRAGE OF TESTS!"
-      exit 0
+      do-final-cleanup
    fi
 }
 

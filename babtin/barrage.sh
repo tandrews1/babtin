@@ -46,13 +46,18 @@ main () {
    done
    wait
    cd $outdir
-   grep "FAIL" ./*
-   if [ $? == 1 ]; then
-      echo "$width X $depth $GO_TEST_PKG - ALL PASS"
-      rm -r $outdir
+   if [ -f $BABTIN_KILL_SWITCH ]; then
+      mkdir $SCRIPT_DIR/tracker/killed
+      mv $outdir $SCRIPT_DIR/tracker/killed
    else
-      mv $outdir $SCRIPT_DIR/tracker/fails
-      tree -D $SCRIPT_DIR/tracker/fails
+      grep "FAIL" ./*
+      if [ $? == 1 ]; then
+         echo "$width X $depth $GO_TEST_PKG - ALL PASS"
+         rm -r $outdir
+      else
+         mv $outdir $SCRIPT_DIR/tracker/fails
+         tree -D $SCRIPT_DIR/tracker/fails
+      fi
    fi
    local total_sec=$SECONDS
    time-seconds-to-human $total_sec
