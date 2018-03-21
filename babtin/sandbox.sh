@@ -82,6 +82,26 @@ barrage-get-name () {
 }
 
 #
+# barrage-debug --
+#
+#     Set tests for debug mode.
+#
+barrage-debug () {
+   export THA_GO_DEBUG=2
+   export THA_GO_STATS=1
+}
+
+#
+# barrage-release --
+#
+#     Set tests for release mode.
+#
+barrage-release () {
+   unset THA_GO_DEBUG
+   unset THA_GO_STATS
+}
+
+#
 # tester-get-bug-from-log --
 #
 # Given a failing log, you have the option to dig out a reasonable bug summary
