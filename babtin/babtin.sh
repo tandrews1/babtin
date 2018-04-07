@@ -159,14 +159,16 @@ do-env-import () {
 
 do-final-cleanup () {
    echo "Cleaning up..."
-   rm -r $RUNNING_DIR && rm -r $WORKING_DIR 
+   rm -r $RUNNING_DIR 
+   rm -r $WORKING_DIR 
 }
 
 do-exit () {
+   local code=$1
    echo ""
-   # Saves some lines; exit 0 if cleanup succeeds, else exit 1
-   do-final-cleanup && echo "Exiting..." && exit 0 
-   exit 1
+   do-final-cleanup
+   echo "Exiting..."
+   exit $code
 }
 
 do-reset-tester-stats () {
@@ -187,7 +189,7 @@ handle-sigint () {
    local pause_seconds=$SECONDS
    read cmd
    if [ "$cmd" == "e" -o "$cmd" == "E" -o "$cmd" == "exit" ]; then
-      do-exit 
+      do-exit 255
    elif [ "$cmd" == "reset" ]; then
       do-reset-tester-stats
       echo "Reset tester stats!"
@@ -495,7 +497,7 @@ main () {
       exit 1
    else
       echo "Babtin: PASSED A BARRAGE OF TESTS!"
-      do-final-cleanup
+      do-exit 0
    fi
 }
 
