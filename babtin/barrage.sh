@@ -21,7 +21,7 @@ main () {
    assert-not-empty "$width" "$FUNCNAME" "$LINENO" "arg1 width"
    assert-not-empty "$width" "$FUNCNAME" "$LINENO" "arg2 depth"
    if [ $width -gt 8  ]; then
-      if [ -z $BABTIN_FORKBOMB_WAIVER ]; then
+      if [ -z $BARRAGE_FORKBOMB_WAIVER ]; then
          echo "WARNING: FORKBOMB RISK :D :D :D !!!!!!"
          echo "Ctrl-C to cancel!"
          read
@@ -54,13 +54,16 @@ main () {
       if [ $? == 1 ]; then
          echo "$barrage_name - BARRAGE TESTING FULL PASS"
          rm -r $outdir
+         local total_sec=$SECONDS
+         time-seconds-to-human $total_sec
       else
          mv $outdir $SCRIPT_DIR/tracker/fails
          tree -D $SCRIPT_DIR/tracker/fails
+         local total_sec=$SECONDS
+         time-seconds-to-human $total_sec
+         exit 1
       fi
    fi
-   local total_sec=$SECONDS
-   time-seconds-to-human $total_sec
 }
 
 # Run!
