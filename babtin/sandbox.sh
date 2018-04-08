@@ -145,7 +145,7 @@ tester-summary () {
    echo "THA_GO_DEBUG=$THA_GO_DEBUG"
    echo "THA_GO_STATS=$THA_GO_STATS"
    echo "GOPATH=$GOPATH"
-   echo "RACE_FLAG_DICE_VAL=$BABTIN_1ST_DICE"
+   echo "BABTIN_1ST_DICE=$BABTIN_1ST_DICE"
    echo "GO_TEST_PKG=$GO_TEST_PKG"
    echo "GO_TEST_SRC=$GO_TEST_SRC"
 }
