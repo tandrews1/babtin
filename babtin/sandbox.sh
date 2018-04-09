@@ -88,7 +88,8 @@ barrage-get-name () {
 #
 barrage-debug () {
    export THA_GO_DEBUG=2
-   export THA_GO_STATS=1
+   # Stop testing stats until we fix CLERKSTATS
+   #export THA_GO_STATS=1
 }
 
 #
