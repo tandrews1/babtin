@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.9.7.1
+VERSION=0.9.7.2
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Files for syncing state to disk for eventual sharing between processes
@@ -402,7 +402,8 @@ main () {
    shopt -s nullglob
 
    if [ -z $BABTIN_FAIL_DIR ]; then
-      export BABTIN_FAIL_DIR=$SCRIPT_DIR/tracker/fails
+      export BABTIN_FAIL_DIR=$SCRIPT_DIR/tracker/fails/babtin.$$
+      mkdir -p $BABTIN_FAIL_DIR
       echo "Using default tracker/fails for failures"
    else
       echo "Using $BABTIN_FAIL_DIR for failures"

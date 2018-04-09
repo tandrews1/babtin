@@ -5,6 +5,7 @@
 # 6.824 Lab 1 - Map Reduce
 # Friday Feb 16th 2018
 #
+VERSION=1.0.0
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 BABTIN_KILL_SWITCH=/tmp/BABTIN_DIE
@@ -50,7 +51,7 @@ main () {
       mkdir $SCRIPT_DIR/tracker/killed
       mv $outdir $SCRIPT_DIR/tracker/killed
    else
-      grep "FAIL" ./*
+      grep -r "FAIL" ./*
       if [ $? == 1 ]; then
          echo "$barrage_name - BARRAGE TESTING FULL PASS"
          rm -r $outdir
@@ -58,7 +59,7 @@ main () {
          time-seconds-to-human $total_sec
       else
          mv $outdir $SCRIPT_DIR/tracker/fails
-         tree -D $SCRIPT_DIR/tracker/fails
+         tree $SCRIPT_DIR/tracker/fails/$barrage_name.$$
          local total_sec=$SECONDS
          time-seconds-to-human $total_sec
          exit 1
