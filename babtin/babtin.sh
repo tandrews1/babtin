@@ -396,7 +396,7 @@ main () {
    local ITERATIONS=0
    if [ "$1" == "--selftest" ]; then
       export SELFTEST=1
-   elif [ "$2" == "--iters" -o "$1" == "--iter" ]; then
+   elif [ "$1" == "--iters" -o "$1" == "--iter" ]; then
       ITERATIONS=$2
    fi
    #shopt -s nullglob //XXX tell Ron the computer made a noise when I read this
