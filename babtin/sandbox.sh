@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# Current directory of this script (set reference point of origin)
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source $SCRIPT_DIR/lib.sh
+
 #
 # "Because A Bash Tester Is Needed"
 #
@@ -62,11 +66,11 @@ golab-test-with-dice-races () {
 # =============================================================================
 
 # 
-# barrage-get-name --
+# sandbox-get-name --
 #
 # Get the custom name for this barrage
 #
-barrage-get-name () {
+sandbox-get-name () {
    pushd "`pwd`" > /dev/null
    cd $GO_TEST_SRC
    local last_git_commit="`git log |head -1 |sed s/commit\ //`"

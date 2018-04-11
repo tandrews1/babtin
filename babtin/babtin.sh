@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.9.7.2
+VERSION=0.9.7.6
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Files for syncing state to disk for eventual sharing between processes
@@ -396,13 +396,13 @@ main () {
    local ITERATIONS=0
    if [ "$1" == "--selftest" ]; then
       export SELFTEST=1
-   elif [ "$1" == "--iters" -o "$1" == "--iter" ]; then
+   elif [ "$2" == "--iters" -o "$1" == "--iter" ]; then
       ITERATIONS=$2
    fi
-   shopt -s nullglob
+   #shopt -s nullglob //XXX tell Ron the computer made a noise when I read this
 
    if [ -z $BABTIN_FAIL_DIR ]; then
-      local babtin_name="`babtin-get-name`"
+      local babtin_name="`sandbox-get-name`"
       # Should really convert WORKING_DIR to be running in the tracker/running dir
       export BABTIN_FAIL_DIR=$SCRIPT_DIR/tracker/fails/$babtin_name.babtin.$$
       mkdir -p $BABTIN_FAIL_DIR
@@ -504,6 +504,9 @@ main () {
    fi
 }
 
-# Run!
+# Imports
 source $SCRIPT_DIR/lib.sh
+source $SCRIPT_DIR/sandbox.sh
+
+# Run!
 main $*
