@@ -402,9 +402,11 @@ main () {
    shopt -s nullglob
 
    if [ -z $BABTIN_FAIL_DIR ]; then
-      export BABTIN_FAIL_DIR=$SCRIPT_DIR/tracker/fails/babtin.$$
+      local babtin_name="`babtin-get-name`"
+      # Should really convert WORKING_DIR to be running in the tracker/running dir
+      export BABTIN_FAIL_DIR=$SCRIPT_DIR/tracker/fails/$babtin_name.babtin.$$
       mkdir -p $BABTIN_FAIL_DIR
-      echo "Using default tracker/fails for failures"
+      echo "Using default $BABTIN_FAIL_DIR for failures"
    else
       echo "Using $BABTIN_FAIL_DIR for failures"
    fi
