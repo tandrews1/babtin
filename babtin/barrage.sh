@@ -59,7 +59,8 @@ main () {
          time-seconds-to-human $total_sec
       else
          mv $outdir $SCRIPT_DIR/tracker/fails
-         tree $SCRIPT_DIR/tracker/fails/$barrage_name.$$
+         cd $SCRIPT_DIR/tracker/fails/$barrage_name.$$
+         tree .
          local total_sec=$SECONDS
          time-seconds-to-human $total_sec
          exit 1

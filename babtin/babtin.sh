@@ -8,7 +8,7 @@
 # 6.824 Distributed Systems
 #
 
-VERSION=0.9.7.6
+VERSION=0.9.8.0
 # Current directory of this script.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Files for syncing state to disk for eventual sharing between processes
@@ -17,7 +17,7 @@ WORKING_TOTAL_PASS_FILE=/tmp/babtin.$$/status/total_pass
 WORKING_TOTAL_FAIL_FILE=/tmp/babtin.$$/status/total_fail
 WORKING_DICE_1_FILE=/tmp/babtin.$$/control/first_dice
 WORKING_SIGINT_FILE=/tmp/babtin.$$/control/sigint
-RUNNING_DIR=$SCRIPT_DIR/tracker/running/pid.$$/
+RUNNING_DIR=$SCRIPT_DIR/tracker/running/babtin.$$/
 SELFTEST=0
 
 # In iterative mode, the number of iterations left.
