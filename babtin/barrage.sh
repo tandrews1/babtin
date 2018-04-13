@@ -23,6 +23,8 @@ main () {
    assert-not-empty "$width" "$FUNCNAME" "$LINENO" "arg2 depth"
    if [ $width -gt 8  ]; then
       if [ -z $BARRAGE_FORKBOMB_WAIVER ]; then
+         echo "HOST: `hostname`"
+         echo "`ifconfig`"
          echo "WARNING: FORKBOMB RISK :D :D :D !!!!!!"
          echo "Ctrl-C to cancel!"
          read
