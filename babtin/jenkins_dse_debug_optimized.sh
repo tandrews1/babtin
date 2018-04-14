@@ -20,21 +20,33 @@ main () {
    local rel_depth=$4
   
    export BARRAGE_FORKBOMB_WAIVER=1 
-   debug-barrage $db_width $db_depth
-   db_exit=$?
-   if [ $db_exit != 0 ]; then
-      echo "DEBUG FAILED... checking RELEASE"
+   if [ -z $BARRAGE_RELEASE_ONLY ]; then
+      debug-barrage $db_width $db_depth
+      db_exit=$?
+      if [ $db_exit != 0 ]; then
+         echo "DEBUG FAILED... checking RELEASE"
+         release-barrage $rel_width $rel_depth
+         rel_exit=$?
+         if [ $rel_exit != 0 ]; then
+            echo "***** RELEASE FAILED -- REGRESSION ALERT! *****"
+            exit $rel_exit
+         else 
+            echo "RELEASE STABLE! LOOKS LIKE DEBUG ISSUE!"
+         fi
+         exit $db_exit
+      else
+         echo "DEBUG PASS! SKIPPING RELEASE!"
+      fi
+   else
+      echo "DEBUG SKIPPED... checking RELEASE"
       release-barrage $rel_width $rel_depth
       rel_exit=$?
       if [ $rel_exit != 0 ]; then
          echo "***** RELEASE FAILED -- REGRESSION ALERT! *****"
-         exit $rel_exit
       else 
-         echo "RELEASE STABLE! LOOKS LIKE DEBUG ISSUE!"
+         echo "RELEASE STABLE!"
       fi
-      exit $db_exit
-   else
-      echo "DEBUG PASS! SKIPPING RELEASE!"
+      exit $rel_exit
    fi
 }
 
