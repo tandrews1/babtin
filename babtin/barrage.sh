@@ -13,9 +13,10 @@ BABTIN_KILL_SWITCH=/tmp/BABTIN_DIE
 main () {
    local width=$1
    local depth=$2
+   local tag=$3
    assert-not-empty "$FUNCNAME" "$LINENO" "$width" "arg1 width"
    assert-not-empty "$FUNCNAME" "$LINENO" "$depth" "arg2 depth"
-   local barrage_name="`sandbox-get-name`-$width-X-$depth-barrage"
+   local barrage_name="`sandbox-get-name`-$width-X-$depth-barrage.$tag"
    assert-not-empty "$FUNCNAME" "$LINENO" "$barrage_name" "sandbox-get-name returned nothing"
    local outdir="$SCRIPT_DIR/tracker/running/barrage/$barrage_name.$$"
    local log="$outdir/$i.log"
@@ -55,6 +56,7 @@ main () {
    else
       grep -r "FAIL" ./*
       if [ $? == 1 ]; then
+         do-graphic
          echo "$barrage_name - BARRAGE TESTING FULL PASS"
          rm -r $outdir
          local total_sec=$SECONDS
