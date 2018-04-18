@@ -41,11 +41,14 @@ main () {
    if [ -f $BABTIN_KILL_SWITCH ]; then
       rm $BABTIN_KILL_SWITCH
    fi
+   if [ -z $BARRAGE_START_DELAY ]; then
+      export BARRAGE_START_DELAY=0.2
+   fi
    while [ $i -lt $width ]
    do
       echo "$i STARTING"
       $SCRIPT_DIR/babtin.sh --iters $depth 2>&1 |tee $outdir/$i.log &
-      sleep 1
+      sleep $BARRAGE_START_DELAY
       i=$((i+1))
    done
    wait
