@@ -20,7 +20,7 @@ main () {
    local rel_depth=$4
   
    export BARRAGE_FORKBOMB_WAIVER=1 
-   if [ ! -z $BARRAGE_RELEASE_ONLY ]; then
+   if [ "$BARRAGE_RELEASE_ONLY" == "true" ]; then
       echo "DEBUG SKIPPED... checking RELEASE"
       release-barrage $rel_width $rel_depth
       rel_exit=$?
