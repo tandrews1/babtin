@@ -34,20 +34,20 @@ main () {
       debug-barrage $db_width $db_depth
       db_exit=$?
       if [ $db_exit != 0 ]; then
-         if "$BARRAGE_DEBUG_ONLY" == "false"]; then
+         if "$BARRAGE_DEBUG_ONLY" == "true"]; then
+            echo "***** DEBUG FAILED -- DID NOT TEST RELEASE! *****"
+            exit $db_exit
+         else
             echo "DEBUG FAILED... auto-checking RELEASE"
             release-barrage $rel_width $rel_depth
             rel_exit=$?
             if [ $rel_exit != 0 ]; then
                echo "***** RELEASE FAILED -- REGRESSION ALERT! *****"
-               exit $rel_exit
             else 
                echo "RELEASE STABLE! LOOKS LIKE DEBUG ISSUE!"
             fi
-         else
-            echo "***** DEBUG FAILED -- DID NOT TEST RELEASE! *****"
+            exit $rel_exit
          fi
-         exit $db_exit
       fi
       echo "DEBUG PASS! BARRAGE_DEBUG_ONLY=$BARRAGE_DEBUG_ONLY"
    fi
