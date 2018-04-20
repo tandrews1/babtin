@@ -25,9 +25,9 @@ main () {
       release-barrage $rel_width $rel_depth
       rel_exit=$?
       if [ $rel_exit != 0 ]; then
-         echo "***** RELEASE FAILED -- REGRESSION ALERT! *****"
+         echo "***** RELEASE ONLY FAILED -- REGRESSION ALERT! *****"
       else 
-         echo "RELEASE STABLE!"
+         echo "RELEASE ONLY - STABLE!"
       fi
       exit $rel_exit
    else
