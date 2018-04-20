@@ -68,6 +68,7 @@ main () {
          mv $outdir $SCRIPT_DIR/tracker/fails
          cd $SCRIPT_DIR/tracker/fails/$barrage_name.$$
          tree .
+         echo $SCRIPT_DIR/tracker/fails/$barrage_name.$$
          local total_sec=$SECONDS
          time-seconds-to-human $total_sec
          exit 1
