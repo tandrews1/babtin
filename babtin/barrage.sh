@@ -42,7 +42,7 @@ main () {
       rm $BABTIN_KILL_SWITCH
    fi
    if [ -z $BARRAGE_START_DELAY ]; then
-      export BARRAGE_START_DELAY=0.2
+      export BARRAGE_START_DELAY=0.5
    fi
    while [ $i -lt $width ]
    do
