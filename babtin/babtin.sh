@@ -66,6 +66,7 @@ dump-env () {
    echo "WORKING_DIR              =$WORKING_DIR"
    echo "BABTIN_1ST_DICE    roll <=$BABTIN_1ST_DICE/6"
    echo "BARRAGE_RELEASE_ONLY     =$BARRAGE_RELEASE_ONLY"
+   echo "BARRAGE_DEBUG_ONLY       =$BARRAGE_DEBUG_ONLY"
    echo "BARRAGE_FORKBOMB_WAIVER  =$BARRAGE_FORKBOMB_WAIVER"
    echo "Sandbox --------------------------------------"
    echo "TODO"
