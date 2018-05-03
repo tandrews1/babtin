@@ -25,10 +25,10 @@ golab-test-std() {
    local name="$1"
    golab-src-dir
    if [ ! -z $THA_GO_DEBUG ]; then
-      tester-test-cmd "stats-$THA_GO_STATS-debug-$THA_GO_DEBUG-$name" "go test -run $name"
+      tester-test-cmd "stats-$THA_GO_STATS-debug-$THA_GO_DEBUG-$name" "/usr/local/go/bin/go test -run $name"
       return $?
    else
-      tester-test-cmd "release-$name" "go test -run $name"
+      tester-test-cmd "release-$name" "/usr/local/go/bin/go test -run $name"
       return $?
    fi
 }
@@ -38,11 +38,11 @@ golab-test-races() {
    golab-src-dir
    if [ ! -z $THA_GO_DEBUG ]; then
       tester-test-cmd "stats-$THA_GO_STATS-debug-$THA_GO_DEBUG-races-$DSE_RACE_TEST-$name" \
-         "go test -race -run $name"
+         "/usr/local/go/bin/go test -race -run $name"
       return $?
    else
       tester-test-cmd "rel-racecheck-$DSE_RACE_TEST-$name" \
-         "go test -race -run $name"
+         "/usr/local/go/bin/go test -race -run $name"
       return $?
    fi
 }
