@@ -138,7 +138,7 @@ tester-get-bug-from-log () {
    # its integrated failure searching, and will create a bug dir with a best
    # attempt combination with whatever is found between the two.
    #
-   grep "FAIL RACE DETECTED" $failing_logfile &> /dev/null
+   grep "DATA RACE" $failing_logfile &> /dev/null
    if [ $? == 0 ]; then
       echo "FAIL RACE DETECTED $GO_TEST_PKG"
       return 
