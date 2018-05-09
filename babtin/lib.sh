@@ -169,4 +169,28 @@ time-seconds-to-human () {
     echo "$day"d "$hour"h "$min"m "$sec"s
 }
 
+do-graphic () {
+   echo "                              _A_ "
+   echo "                             / | \ "
+   echo "                            |.-=-.| "
+   echo "                            )\_|_/( "
+   echo "                         .=='\   /'==. "
+   echo "                       .'\   (':')   /'. "
+   echo "                     _/_ |_.-' : '-._|__\_ "
+   echo "                    <___>'\    :   / '<___> "
+   echo "                    /  /   >=======<  /  / "
+   echo "                  _/ .'   /  ,-:-.  \/=,' "
+   echo "                 / _/    |__/v^v^v\__) \ "
+   echo "                 \\(\\)     |V^V^V^V^V|\_/ "
+   echo "                  (\\\\     \\'---|---'/ "
+   echo "                    \\\\     \\-._|_,-/ "
+   echo "     adapted from    \\\\     |__|__| "
+   echo "    art by hjw        \\\\   <___X___> "
+   echo "                       \\\\   \\..|../ "
+   echo "                        \\\\   \\ | / "
+   echo "                         \\\\  /V|V\ "
+   echo "                          \\\\/  |  \ "
+   echo "                           '--' '--' "
+}
+
 

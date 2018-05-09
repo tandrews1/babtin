@@ -40,30 +40,6 @@ get-test-log () {
    echo $RUNNING_DIR/$file_name.$RANDOM
 }
 
-do-graphic () {
-   echo "                              _A_ "
-   echo "                             / | \ "
-   echo "                            |.-=-.| "
-   echo "                            )\_|_/( "
-   echo "                         .=='\   /'==. "
-   echo "                       .'\   (':')   /'. "
-   echo "                     _/_ |_.-' : '-._|__\_ "
-   echo "                    <___>'\    :   / '<___> "
-   echo "                    /  /   >=======<  /  / "
-   echo "                  _/ .'   /  ,-:-.  \/=,' "
-   echo "                 / _/    |__/v^v^v\__) \ "
-   echo "                 \\(\\)     |V^V^V^V^V|\_/ "
-   echo "                  (\\\\     \\'---|---'/ "
-   echo "                    \\\\     \\-._|_,-/ "
-   echo "     adapted from    \\\\     |__|__| "
-   echo "    art by hjw        \\\\   <___X___> "
-   echo "                       \\\\   \\..|../ "
-   echo "                        \\\\   \\ | / "
-   echo "                         \\\\  /V|V\ "
-   echo "                          \\\\/  |  \ "
-   echo "                           '--' '--' "
-}
-
 do-title () {
    echo ""
    echo "`io-color-start green`B.a.b.t.i.n. v$VERSION "
@@ -89,6 +65,9 @@ dump-env () {
    echo "SELFTEST                 =$SELFTEST"
    echo "WORKING_DIR              =$WORKING_DIR"
    echo "BABTIN_1ST_DICE    roll <=$BABTIN_1ST_DICE/6"
+   echo "BARRAGE_RELEASE_ONLY     =$BARRAGE_RELEASE_ONLY"
+   echo "BARRAGE_DEBUG_ONLY       =$BARRAGE_DEBUG_ONLY"
+   echo "BARRAGE_FORKBOMB_WAIVER  =$BARRAGE_FORKBOMB_WAIVER"
    echo "Sandbox --------------------------------------"
    echo "TODO"
    echo "Tester Summary -------------------------------"

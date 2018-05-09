@@ -13,9 +13,10 @@ BABTIN_KILL_SWITCH=/tmp/BABTIN_DIE
 main () {
    local width=$1
    local depth=$2
+   local tag=$3
    assert-not-empty "$FUNCNAME" "$LINENO" "$width" "arg1 width"
    assert-not-empty "$FUNCNAME" "$LINENO" "$depth" "arg2 depth"
-   local barrage_name="`sandbox-get-name`-$width-X-$depth-barrage"
+   local barrage_name="`sandbox-get-name`-$width-X-$depth-barrage.$tag"
    assert-not-empty "$FUNCNAME" "$LINENO" "$barrage_name" "sandbox-get-name returned nothing"
    local outdir="$SCRIPT_DIR/tracker/running/barrage/$barrage_name.$$"
    local log="$outdir/$i.log"
@@ -40,11 +41,14 @@ main () {
    if [ -f $BABTIN_KILL_SWITCH ]; then
       rm $BABTIN_KILL_SWITCH
    fi
+   if [ -z $BARRAGE_START_DELAY ]; then
+      export BARRAGE_START_DELAY=0.5
+   fi
    while [ $i -lt $width ]
    do
       echo "$i STARTING"
       $SCRIPT_DIR/babtin.sh --iters $depth 2>&1 |tee $outdir/$i.log &
-      sleep 1
+      sleep $BARRAGE_START_DELAY
       i=$((i+1))
    done
    wait
@@ -55,6 +59,7 @@ main () {
    else
       grep -r "FAIL" ./*
       if [ $? == 1 ]; then
+         do-graphic
          echo "$barrage_name - BARRAGE TESTING FULL PASS"
          rm -r $outdir
          local total_sec=$SECONDS
@@ -63,6 +68,7 @@ main () {
          mv $outdir $SCRIPT_DIR/tracker/fails
          cd $SCRIPT_DIR/tracker/fails/$barrage_name.$$
          tree .
+         echo $SCRIPT_DIR/tracker/fails/$barrage_name.$$
          local total_sec=$SECONDS
          time-seconds-to-human $total_sec
          exit 1
