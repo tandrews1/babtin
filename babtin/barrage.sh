@@ -44,6 +44,10 @@ main () {
    if [ -z $BARRAGE_START_DELAY ]; then
       export BARRAGE_START_DELAY=0.5
    fi
+   if [ $width -gt 1 ]; then
+      # parallel Babtins means it will have to compact output to just PASS/FAIL
+      export BABTIN_BARRAGE=1
+   fi
    while [ $i -lt $width ]
    do
       echo "$i STARTING"
@@ -53,6 +57,7 @@ main () {
    done
    wait
    cd $outdir
+   unset BABTIN_BARRAGE
    if [ -f $BABTIN_KILL_SWITCH ]; then
       mkdir $SCRIPT_DIR/tracker/killed
       mv $outdir $SCRIPT_DIR/tracker/killed

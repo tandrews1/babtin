@@ -29,7 +29,7 @@ golab-test-std() {
       go_path="/usr/local/go/bin/go"
    fi
    if [ ! -z $THA_GO_DEBUG ]; then
-      tester-test-cmd "stats-$THA_GO_STATS-debug-$THA_GO_DEBUG-$name" "$go_path test -run $name"
+      tester-test-cmd "stats-$THA_GO_STATS-debug-$THA_GO_DEBUG-$name" "$go_path test -timeout 600s -run $name"
       return $?
    else
       tester-test-cmd "release-$name" "$go_path test -run $name"
@@ -81,7 +81,7 @@ golab-test-with-dice-races () {
 sandbox-get-name () {
    pushd "`pwd`" > /dev/null
    cd $GO_TEST_SRC
-   local last_git_commit="`git log |head -1 |sed s/commit\ //`"
+   local last_git_commit="`git log |head -1 |sed s/commit\ // |cut -c1-7`"
    local git_branch="`git branch |grep \* |sed s/\*\ // |sed s/[^a-zA-Z0-9]/_/g`"
    assert-not-empty "$FUNCNAME" "$LINENO" "$last_git_commit" 
    assert-not-empty "$FUNCNAME" "$LINENO" "$git_branch"

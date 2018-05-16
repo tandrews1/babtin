@@ -327,8 +327,13 @@ tester-test-cmd () {
    local logfile="`get-test-log $name`"
    local time_fmt_str="babtintime:real %E\nbabtintime:user %U\nbabtintime:sys %S"
    echo "$cmd" >> $logfile
-   (/usr/bin/time -f "$time_fmt_str" $cmd) &> $logfile
-   cmd_exit=$?
+   if [ ! -z $BABTIN_BARRAGE ]; then
+      (/usr/bin/time -f "$time_fmt_str" $cmd) &> $logfile
+      cmd_exit=$?
+   else
+      (/usr/bin/time -f "$time_fmt_str" $cmd) 2>&1 |tee $logfile
+      cmd_exit=${PIPESTATUS[0]}
+   fi
    printf "(%16s) %s: " "`time-seconds-to-human $SECONDS`" "$name"
    if [ -z $ITERATIONS ]; then
       # If we handled a sigint and returned, then just abort the current test...
@@ -447,7 +452,7 @@ main () {
    do
       if [ -f /tmp/BABTIN_DIE ]; then
          echo "Exiting due to /tmp/BABTIN_DIE flag set"
-         return
+         return 130
       fi
       # Practice with Squire tester tester.
       if [ $SELFTEST == 1 ]; then
