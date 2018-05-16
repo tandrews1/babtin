@@ -173,7 +173,7 @@ do-graphic () {
    echo "                              _A_ "
    echo "                             / | \ "
    echo "                            |.-=-.| "
-   echo "                            )\_|_/( "
+   echo "                            )\I|I/( "
    echo "                         .=='\   /'==. "
    echo "                       .'\   (':')   /'. "
    echo "                     _/_ |_.-' : '-._|__\_ "
